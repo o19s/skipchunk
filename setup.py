@@ -11,7 +11,18 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = ['Click>=6.0', 'spacy>=2.2.4', 'pysolr==3.9.0', 'tqdm', 'nltk', 'requests==2.23.0']
+requirements = [
+    'spacy>=2.2.4', 
+    #'neuralcoref==4.0',
+    'nltk>=3.5',
+    'pysolr>=3.9.0',
+    'Click>=6.0',
+    'tqdm>=4.48.2',
+    'requests==2.23.0',
+    'jsonpickle==1.4.1',
+    'bs4>=0.0.1',
+    'lxml>=4.5.2'
+]
 
 setup_requirements = [ ]
 

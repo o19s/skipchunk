@@ -14,24 +14,48 @@ skipchunk
         :alt: Documentation Status
 
 
+Easy natural language concept search for the masses.
 
+Skipchunk is a text preprocessor for search.  It uses NLP (via spacy) to fix the naive normalization issues in Solr and Elasticsearch analysis chains.
 
-Relaxed concept normalizer.
+Out of the box it provides a hassle-free autosuggest for any corpus from scratch.
 
-
-* Free software: MIT license
+* Free software: Apache 2.0 license
 * Documentation: https://skipchunk.readthedocs.io.
+
+Install
+-------
+
+``
+pip install skipchunk
+python -m spacy download 'en_core_web_lg'
+python
+>>>import nltk
+>>>nltk.download()  ##When the GUI opens, install the 'wordnet' package listed in the 'all packages' tab
+>>>^D ##quit python after wordnet is downloaded
+``
+
+You also need to have solr installed and running somewhere!  The current supported version is 8.4.1, but it might work on other versions.
+
+Use It!
+-------
+See the ``./example/`` folder for an end-to-end OSC blog load and query
 
 
 Features
 --------
 
-* TODO
+* Identifies all the noun phrases and verb phrases in a corpus
+* Indexes these phrases in Solr for a really good out-of-the-box autosuggest
+* Structures the phrases as a graph so that concept-relationship-concept can be easily found
+* Keeps enriched content ready for reindexing
 
 Credits
 -------
 
-This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
+Developed by Max Irwin, OpenSourceConnections https://opensourceconnections.com
 
-.. _Cookiecutter: https://github.com/audreyr/cookiecutter
-.. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
+Heavily uses https://spacy.io - credit to the https://explosion.ai team!
+Dependent on Solr (an Apache project) https://lucene.apache.org/solr
+
+All the blog posts contained in the example directory are copyright OpenSource Connections, and may not be redistributed without permission

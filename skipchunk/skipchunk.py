@@ -3,16 +3,21 @@
 """Main module."""
 
 import os
-import shutil
-import collections
+import json
 import spacy
+import shutil
 import pickle
 import datetime
-import sq
+import collections
 from datetime import date as dt
 from enum import Enum
 from tqdm import tqdm
 from nltk.corpus import wordnet as wn
+
+from skipchunk import html_strip
+from skipchunk import payloader
+
+#import neuralcoref
 
 #### TODO: make these tag sets configurable!
 _NNJJ_ = {'JJ','JJR','JJS','NN','NNP','NNS','ADJ','NOUN'} #Nouns and Adjectives
@@ -26,6 +31,7 @@ _EXCL_ = {'SP','-RRB-','HYPH'} #Noise to skip
 _EXCL_DEPS_ = {} #dependencies to exclude
 
 
+#Decides whether to lemmatize based on POS tag
 def lemmatize(token):
     lemma = token.lower_
     if token.tag_ in _NNJJ_:
@@ -34,6 +40,7 @@ def lemmatize(token):
         lemma = token.lemma_
     return lemma
 
+#Uses wordnet to get de-adjectival nouns
 def adj_to_noun(lem):
     for i in wn.synsets(lem, wn.ADJ):
         for j in i.lemmas():
@@ -44,6 +51,7 @@ def adj_to_noun(lem):
                     #Found it!
                     return k.name()
 
+#Uses wordnet to get de-nounal adjective
 def noun_to_adj(lem):
     for i in wn.synsets(lem, wn.NOUN):
         for j in i.lemmas():
@@ -178,7 +186,6 @@ def chunkToLabel(stack,origs,start,docid,sentenceid,type="concept"):
 
 
     #Removes punctuation from the label
-    # 
     i = 0
     j = 0
     k = 0
@@ -287,15 +294,6 @@ def skipchunk(sentence,docid,sentenceid,maxslop=4,minlength=2,maxlength=4):
                     origs=[]
                     ispredicate = False
 
-        #else:
-        #    stack = []
-        #    origs = []          
-        #    isconcept = False    
-        #    ispredicate = False
-        #    start = 0
-        #    last = 0
-        #    slop = 0
-
         i += 1
 
     return concepts,predicates
@@ -350,10 +348,64 @@ def groupConcepts(data,minlabels=1):
             items.append(group)
     return sorted(items, key=lambda x:x.total, reverse=True)
 
+
+# --------------------------------------------------
+
+def textFromFields(doc,fields,strip_html=False,spacer='\n\n'):
+
+    text = ""
+    for field in fields:
+        if isinstance(doc[field], str):
+            if strip_html:
+                string = html_strip.strip(doc[field])
+            else:
+                string = doc[field]
+            text += string + spacer
+        elif isinstance(doc[field], list):
+            if strip_html:
+                string = html_strip.strip(spacer.join(doc[field]))
+            else:
+                string = spacer.join(doc[field])
+            text += string + spacer
+        else:
+            try:
+                if strip_html:
+                    string = html_strip.strip(str(doc[field]))
+                else:
+                    string = str(doc[field])
+                text += string
+            except:
+                pass
+
+    return text
+
 ##==========================================================
 # MAIN API ENTRY POINT!  USE THIS!
 
+
 class Skipchunk():
+
+    # --------------------------------------------------
+
+    def tuplize(self,loader="json",filename=None,fields=[],strip_html=False):
+        spacer = '\n\n'
+        tuples = []
+
+        if loader == "json":
+            if filename and isinstance(filename,str):
+                with open(filename) as fd:
+                    data = json.load(fd)
+            else:
+                raise ValueError('A filename is required for the json loader')
+
+        if len(fields)==0:
+            raise ValueError('Specify at least one field to convert')
+
+        for post in data:
+            text = textFromFields(post,fields,strip_html=strip_html)
+            tuples.append((text,post))
+
+        return tuples
 
     # --------------------------------------------------
 
@@ -488,8 +540,6 @@ class Skipchunk():
 
         #Config:
         self.name = name
-        self.spacy_model=spacy_model
-        self.nlp = spacy.load(self.spacy_model)
         self.idfield = idfield
         self.maxslop = maxslop
         self.minconceptlength = minconceptlength
@@ -497,6 +547,11 @@ class Skipchunk():
         self.minpredicatelength = minpredicatelength
         self.maxpredicatelength = maxpredicatelength
         self.minlabels = minlabels
+        
+        #Initialize NLP pipeline
+        self.spacy_model=spacy_model
+        self.nlp = spacy.load(self.spacy_model)
+        #neuralcoref.add_to_pipe(self.nlp)
 
         #These don't do anything yet but they will be used later to untangle the global constants
         self.concept_tags = concept_tags
@@ -514,7 +569,7 @@ class Skipchunk():
         self.conceptgroups = None
         self.predicategroups = None
 
-        #Where we will keep stuff:
+        #Where we will keep stuff on disk:
         self.skipchunk_data = os.path.join(os.getcwd(),'skipchunk_data')
         if not os.path.isdir(self.skipchunk_data):
             os.makedirs(self.skipchunk_data)
@@ -530,41 +585,34 @@ class Skipchunk():
         self.solr_data = os.path.join(self.root, 'solr')
         if not os.path.isdir(self.solr_data):
             #Create configset and root path for data for the new solr core
-            module_dir = os.path.dirname(sq.__file__)
+            module_dir = os.path.dirname(os.path.abspath(__file__))
             pathlen = module_dir.rfind('/')+1
             source = module_dir[0:pathlen] + '/solr_home/configsets/skipchunk-configset'
             shutil.copytree(source,self.solr_data)
 
-##==========================================================
-## EASY SANITY TESTING:
-## python skipchunk.py
 
-if __name__ == "__main__":
-    import jsonpickle
-    def pretty(obj):
-        print(jsonpickle.encode(obj,indent=2))
 
-    def test():
+        ### THE BIG PICTURE ######################################
+        """
+        CONTENT ANALYSIS PIPELINE
+         - tuplize (decide what fields to use and what contexts)
+         - html strip (strips html from fields into plain text)
+         - sentencize (splits plain text into sentences)
+         - enrich (extracts the latent language graph)
+         - entitize (flags entities)
+         - payload (assigns tokens a payload value)
+        """
 
-        text = 'The quick brown fox jumped over the lazy dog.  I ate a sandwich in the afternoon, then I drank some tea.  That afternoon\'s sandwich was very tasty.  So was the tea.'
-        post = {"id":"123","text":text}
-        pairs = [(text,post)]
-        print(pairs)
+        """
+        QUERY ANALYSIS PIPELINE
+         - shingler (left-most longest shingles for concept identification)
+         - tagger (looks up shingles in the concept dictionary)
+         - rewriter (rewrites the query based on the tags)
+        """
 
-        sc = Skipchunk('junk',
-            spacy_model='en_core_web_sm',
-            maxslop=3,
-            minconceptlength=1,
-            maxconceptlength=3,
-            minpredicatelength=1,
-            maxpredicatelength=3,
-            minlabels=1)
-
-        sc.enrich(pairs)
-        sc.save()
-        sc.load()
-
-        pretty(sc.conceptgroups)
-        pretty(sc.predicategroups)
-
-    test()
+        """
+        COMMANDS
+         - analyze (executes the above pipeline)
+         - index (sends enriched documents to the search engine)
+         - save or load (saves to the local disk)
+        """

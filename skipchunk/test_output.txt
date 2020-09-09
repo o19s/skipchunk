@@ -1,0 +1,245 @@
+==========================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-------------------------------
+FAILED:: html
+a <a hr<ef=aa<a>> </close</a>
+- - - - - - - BECAME
+a >
+- - - - - - - SHOULD BE
+a <a hr<ef=aa> </close
+-------------------------------
+FAILED:: html
+The <a href=<a href="http://www.advancedmd.com>medical">http://www.advancedmd.com>medical</a> practice software</a>
+- - - - - - - BECAME
+The http://www.advancedmd.com>medical practice software
+- - - - - - - SHOULD BE
+The <a href=medical">http://www.advancedmd.com>medical practice software
+-------------------------------
+FAILED:: html
+one<![CDATA[<one><two>three<four></four></two></one>]]>two
+- - - - - - - BECAME
+onetwo
+- - - - - - - SHOULD BE
+one<one><two>three<four></four></two></one>two
+-------------------------------
+FAILED:: html
+one<![CDATA[two<![CDATA[three]]]]><![CDATA[>four]]>five
+- - - - - - - BECAME
+onefive
+- - - - - - - SHOULD BE
+onetwo<![CDATA[three]]>fourfive
+-------------------------------
+FAILED:: html
+one<BR />two<br>three
+- - - - - - - BECAME
+onetwothree
+- - - - - - - SHOULD BE
+one two three
+-------------------------------
+FAILED:: html
+one<BR some stuff here too>two</BR>
+- - - - - - - BECAME
+onetwo
+- - - - - - - SHOULD BE
+one two
+-------------------------------
+FAILED:: html
+one<style type="text/css"> body,font,a { font-family:arial; } </style>two
+- - - - - - - BECAME
+one body,font,a { font-family:arial; } two
+- - - - - - - SHOULD BE
+one<style type="text/css"></style>two
+-------------------------------
+FAILED:: html
+one<img src="image.png"
+ alt =  "Alt: <!--#echo var='${IMAGE_CAPTION:<!--comment-->\'Comment\'}'  -->"
+
+ title="Title: <!--#echo var="IMAGE_CAPTION"-->">two
+- - - - - - - BECAME
+one">two
+- - - - - - - SHOULD BE
+onetwo
+-------------------------------
+FAILED:: html
+one<script><!-- <!--#config comment="<!-- \"comment\"-->"--> --></script>two
+- - - - - - - BECAME
+one<!-- <!--#config comment="<!-- \"comment\"-->"--> -->two
+- - - - - - - SHOULD BE
+one two
+-------------------------------
+FAILED:: html
+one<script attr= bare><!-- action('<!-- comment -->', "\"-->\""); --></script>two
+- - - - - - - BECAME
+one<!-- action('<!-- comment -->', "\"-->\""); -->two
+- - - - - - - SHOULD BE
+one two
+-------------------------------
+FAILED:: html
+hello<script><!-- f('<!--internal--></script>'); --></script>
+- - - - - - - BECAME
+hello<!-- f('<!--internal-->'); -->
+- - - - - - - SHOULD BE
+hello
+-------------------------------
+FAILED:: html
+one<script no-value-attr>callSomeMethod();</script>two
+- - - - - - - BECAME
+onecallSomeMethod();two
+- - - - - - - SHOULD BE
+one<script no-value-attr></script>two
+-------------------------------
+FAILED:: html
+one<style type="text/css">
+<!--
+@import url('http://www.lasletrasdecanciones.com/css.css');
+-->
+</style>two
+- - - - - - - BECAME
+one <!-- @import url('http://www.lasletrasdecanciones.com/css.css'); --> two
+- - - - - - - SHOULD BE
+one two
+==========================================
+passed 67 out of 80 (0.837500)
+==========================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-------------------------------
+FAILED:: lxml
+<div class="foo">this is some text</div> here is a <a href="#bar">link</a> and another <a href="http://lucene.apache.org/">link</a>. This is an entity: &amp; plus a &lt;.  Here is an &. <!-- is a comment -->
+- - - - - - - BECAME
+this is some text here is a link and another link . This is an entity: & plus a <. Here is an &.
+- - - - - - - SHOULD BE
+this is some text here is a link and another link. This is an entity: & plus a <. Here is an &.
+-------------------------------
+FAILED:: lxml
+a <a hr<ef=aa<a>> </close</a>
+- - - - - - - BECAME
+a >
+- - - - - - - SHOULD BE
+a <a hr<ef=aa> </close
+-------------------------------
+FAILED:: lxml
+The <a href=<a href="http://www.advancedmd.com>medical">http://www.advancedmd.com>medical</a> practice software</a>
+- - - - - - - BECAME
+The http://www.advancedmd.com>medical practice software
+- - - - - - - SHOULD BE
+The <a href=medical">http://www.advancedmd.com>medical practice software
+-------------------------------
+FAILED:: lxml
+one<![CDATA[<one><two>three<four></four></two></one>]]>two
+- - - - - - - BECAME
+one three ]]>two
+- - - - - - - SHOULD BE
+one<one><two>three<four></four></two></one>two
+-------------------------------
+FAILED:: lxml
+one<![CDATA[two<![CDATA[three]]]]><![CDATA[>four]]>five
+- - - - - - - BECAME
+onefour]]>five
+- - - - - - - SHOULD BE
+onetwo<![CDATA[three]]>fourfive
+-------------------------------
+FAILED:: lxml
+<![CDATA[<br>]]
+- - - - - - - BECAME
+]]
+- - - - - - - SHOULD BE
+<br>]]
+-------------------------------
+FAILED:: lxml
+<![CDATA[<br>]]>
+- - - - - - - BECAME
+]]>
+- - - - - - - SHOULD BE
+<br>
+-------------------------------
+FAILED:: lxml
+<![CDATA[<br>] ] >
+- - - - - - - BECAME
+] ] >
+- - - - - - - SHOULD BE
+<br>] ] >
+-------------------------------
+FAILED:: lxml
+<![CDATA[<br>] ] >
+- - - - - - - BECAME
+] ] >
+- - - - - - - SHOULD BE
+<br>] ] >
+-------------------------------
+FAILED:: lxml
+one<sPAn class="invisible">two<sup>2<sup>e</sup></sup>.</SpaN>three
+- - - - - - - BECAME
+one two 2 e . three
+- - - - - - - SHOULD BE
+onetwo2e.three
+-------------------------------
+FAILED:: lxml
+one<style type="text/css"> body,font,a { font-family:arial; } </style>two
+- - - - - - - BECAME
+one two
+- - - - - - - SHOULD BE
+one<style type="text/css"></style>two
+-------------------------------
+FAILED:: lxml
+one<img src="image.png"
+ alt =  "Alt: <!--#echo var='${IMAGE_CAPTION:<!--comment-->\'Comment\'}'  -->"
+
+ title="Title: <!--#echo var="IMAGE_CAPTION"-->">two
+- - - - - - - BECAME
+one ">two
+- - - - - - - SHOULD BE
+onetwo
+-------------------------------
+FAILED:: lxml
+hello<script><!-- f('<!--internal--></script>'); --></script>
+- - - - - - - BECAME
+hello '); -->
+- - - - - - - SHOULD BE
+hello
+-------------------------------
+FAILED:: lxml
+one<script no-value-attr>callSomeMethod();</script>two
+- - - - - - - BECAME
+one two
+- - - - - - - SHOULD BE
+one<script no-value-attr></script>two
+==========================================
+passed 66 out of 80 (0.825000)

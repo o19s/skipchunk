@@ -101,5 +101,8 @@ ENV/
 # mypy
 .mypy_cache/
 
+#skipchunk state
+skipchunk_data
+
 #Other
 .DS_store
