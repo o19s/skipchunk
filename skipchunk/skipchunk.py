@@ -14,8 +14,8 @@ from enum import Enum
 from tqdm import tqdm
 from nltk.corpus import wordnet as wn
 
-from skipchunk import html_strip
-from skipchunk import payloader
+from . import html_strip
+from . import payloader
 
 #import neuralcoref
 
@@ -382,7 +382,6 @@ def textFromFields(doc,fields,strip_html=False,spacer='\n\n'):
 ##==========================================================
 # MAIN API ENTRY POINT!  USE THIS!
 
-
 class Skipchunk():
 
     # --------------------------------------------------
@@ -409,6 +408,13 @@ class Skipchunk():
 
     # --------------------------------------------------
 
+    def saveDocument(self,doc):
+        filename = self.document_data + '/' + doc[self.idfield] + '.json'
+        with open(filename,"w") as file:
+            file.write(json.dumps(doc))
+
+    # --------------------------------------------------
+
     def enrich(self,tuples):
 
         idfield = self.idfield
@@ -423,6 +429,8 @@ class Skipchunk():
         
         enriched = []
 
+        payloadify = payloader.Payloader()
+
         for doc,context in self.nlp.pipe(tuples,as_tuples=True):
 
             rich = context
@@ -433,8 +441,11 @@ class Skipchunk():
             docconcepts = {}
             docpredicates = {}
 
+            payloads = []
+
             for sentence in doc.sents:
 
+                #SKIPCHUNK PIPELINE STAGE
                 cons,preds = skipchunk(sentence,docid=docid,sentenceid=sentenceid,maxslop=maxslop,maxlength=maxconceptlength)
 
                 for concept in cons:
@@ -456,10 +467,18 @@ class Skipchunk():
                             docpredicates[predicate.key] = []
                         docpredicates[predicate.key].append(predicate)
 
+                #PAYLOAD PIPELINE STAGE
+                payloads.append(payloadify.enrich(sentence))
+
                 sentenceid += 1
+
+            #Messy to do this here...but it works!
+            rich["content_payloads"] = payloads
+            self.saveDocument(rich)
 
             rich["skipchunk_concepts"] = docconcepts
             rich["skipchunk_predicates"] = docpredicates
+
             enriched.append(rich)
 
         conceptgroups = groupConcepts(concepts,minlabels=minlabels)
@@ -520,26 +539,28 @@ class Skipchunk():
                 pickle.dump(self.predicategroups,fd,protocol=pickle.HIGHEST_PROTOCOL)
 
     def __init__(self,
-        name,
-        spacy_model='en_core_web_lg',
-        idfield='id',
-        maxslop=4,
-        minconceptlength=2,
-        maxconceptlength=4,
-        minpredicatelength=2,
-        maxpredicatelength=4,
-        minlabels=2,
-        concept_tags = _NNJJ_,
-        predicate_tags = _VBRB_,
-        punctuation_tags = _PUNC_,
-        subjectof_dependencies = _SUBJ_DEPS_,
-        objectof_dependencies = _OBJ_DEPS_,
-        exclude_tags = _EXCL_,
-        exclude_dependencies = _EXCL_DEPS_
+            name,
+            spacy_model='en_core_web_lg',
+            idfield='id',
+            maxslop=4,
+            minconceptlength=2,
+            maxconceptlength=4,
+            minpredicatelength=2,
+            maxpredicatelength=4,
+            minlabels=2,
+            concept_tags = _NNJJ_,
+            predicate_tags = _VBRB_,
+            punctuation_tags = _PUNC_,
+            subjectof_dependencies = _SUBJ_DEPS_,
+            objectof_dependencies = _OBJ_DEPS_,
+            exclude_tags = _EXCL_,
+            exclude_dependencies = _EXCL_DEPS_
         ):
 
         #Config:
         self.name = name
+        self.graphname = name + '-graph'
+        self.indexname = name + '-index'
         self.idfield = idfield
         self.maxslop = maxslop
         self.minconceptlength = minconceptlength
@@ -582,15 +603,25 @@ class Skipchunk():
         if not os.path.isdir(self.pickle_data):
             os.makedirs(self.pickle_data)
 
-        self.solr_data = os.path.join(self.root, 'solr')
-        if not os.path.isdir(self.solr_data):
-            #Create configset and root path for data for the new solr core
-            module_dir = os.path.dirname(os.path.abspath(__file__))
-            pathlen = module_dir.rfind('/')+1
-            source = module_dir[0:pathlen] + '/solr_home/configsets/skipchunk-configset'
-            shutil.copytree(source,self.solr_data)
+        self.document_data = os.path.join(self.root, 'documents')
+        if not os.path.isdir(self.document_data):
+            os.makedirs(self.document_data)
 
+        #TODO - get this outta here and put it in solr.py!
+        self.solr_graph_data = os.path.join(self.root, 'solr_graph')
+        self.solr_index_data = os.path.join(self.root, 'solr_index')
+        module_dir = os.path.dirname(os.path.abspath(__file__))
+        pathlen = module_dir.rfind('/')+1
 
+        if not os.path.isdir(self.solr_graph_data):
+            #Create configset and root path for data for the new solr graph core
+            graph_source = module_dir[0:pathlen] + '/solr_home/configsets/skipchunk-graph-configset'
+            shutil.copytree(graph_source,self.solr_graph_data)
+
+        if not os.path.isdir(self.solr_index_data):
+            #Create configset and root path for data for the new solr index core
+            index_source = module_dir[0:pathlen] + '/solr_home/configsets/skipchunk-index-configset'
+            shutil.copytree(index_source,self.solr_index_data)
 
         ### THE BIG PICTURE ######################################
         """

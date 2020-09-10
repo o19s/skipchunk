@@ -2,15 +2,21 @@
 
 """Example for `skipchunk` package."""
 import json
-from skipchunk import sq
+from skipchunk.graphquery import GraphQuery
+from skipchunk.indexquery import IndexQuery
+from skipchunk.solr import timestamp
 from skipchunk import skipchunk as sc
 
 if __name__ == "__main__":
 
-    LOAD=False
-    name = 'osc-blog'
-    host = 'http://localhost:8983/solr/'
+    LOAD   = False
+
+    name   = 'osc-blog'
+    host   = 'http://localhost:8983/solr/'
     source = 'blog-posts.json'
+    #source = 'blog-posts-one.json'
+
+    print(timestamp()," | Initializing")
 
     s = sc.Skipchunk(name,
         spacy_model='en_core_web_lg',
@@ -20,19 +26,24 @@ if __name__ == "__main__":
         maxpredicatelength=3,
         minlabels=1)
 
-    q = sq.SkipchunkQuery(host,name)
+    gq = GraphQuery(host,name)
+    iq = IndexQuery(host,name)
 
     if LOAD:
-        print(sq.timestamp()," | Loading Pickle")
+        print(timestamp()," | Loading Pickle")
         s.load()
     else:
-        print(sq.timestamp()," | Loading Tuples")
+        print(timestamp()," | Loading Tuples")
         tuples = s.tuplize(filename=source,fields=['title','content'])
-        print(sq.timestamp()," | Enriching")
+        print(timestamp()," | Enriching")
         s.enrich(tuples)
-        print(sq.timestamp()," | Pickling")
+        print(timestamp()," | Pickling")
         s.save()
 
-    print(sq.timestamp()," | Indexing")
-    q.index(s)
-    print(sq.timestamp()," | !!!~~~~~DONE~~~~~!!!")
+    print(timestamp()," | Indexing Graph")
+    gq.index(s)
+
+    print(timestamp()," | Indexing Content")
+    iq.index(s)
+    
+    print(timestamp()," | !!!~~~~~DONE~~~~~!!!")

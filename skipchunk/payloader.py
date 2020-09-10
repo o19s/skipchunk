@@ -23,14 +23,11 @@ VERB 				PART
 
 _POS_SCORES_ = {
 	'ADJ'  :  1.5, 	#adjective
-    'ADV'  :  1.5, 	#adverb
-    'INTJ' :  1.0, 	#interjection
-    'NOUN' :  2.5, 	#noun
-    'PART' :  1.0, 	#particle
-    'PRON' :  1.5, 	#pronoun
-    'PROPN':  2.0, 	#proper noun
-    'SCONJ':  1.0, 	#subordinating conjunction
-    'VERB' :  2.5
+	'ADV'  :  1.5, 	#adverb
+	'INTJ' :  1.0, 	#interjection
+	'NOUN' :  2.5, 	#noun
+	'PROPN':  2.0, 	#proper noun
+	'VERB' :  2.5
 }
 
 """
@@ -50,25 +47,32 @@ _DEP_SCORES_ = {
 
 class Payloader:
 
-	def payload(self,stream):
+	def enrich(self,stream):
 		
 		payloads = []
 
 		for tok in stream:
 			score = None
 
-			if tok._pos in self.pos_scores:
-				score = self.pos_scores[tok._pos]
+			if (len(tok.text)>0) and ('|' not in tok.text):
 
-				if tok._dep in self.dep_scores:
-					score += self.dep_scores[tok._dep]
+				if (tok.is_alpha) and (len(tok.lemma_)>0) and (tok.pos_ in self.pos_scores):
+					score = self.pos_scores[tok.pos_]
 
-				payloads.append(tok.text + '|' + str(score))
+					if tok.dep_ in self.dep_scores:
+						score += self.dep_scores[tok.dep_]
+
+					value = str(score) # + 'f'
+
+					payloads.append(tok.lemma_ + '|' + value)
+
+				else:
+					payloads.append(tok.text)
 
 			else:
-				payloads.append(str(tok))
+				payloads.append(tok.text.replace('|',''))
 
-		return payloads
+		return ' '.join([t for t in payloads if len(t)>0])
 
 	def __init__(self,pos_scores=_POS_SCORES_,dep_scores=_DEP_SCORES_):
 		self.dep_scores = dep_scores

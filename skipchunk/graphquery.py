@@ -1,79 +1,6 @@
 import json
 import pysolr
-import requests
-import os
-import shutil
-import datetime
-import jsonpickle
-from datetime import date as dt
-
-
-def pretty(obj):
-        print(jsonpickle.encode(obj,indent=2))
-
-## -------------------------------------------
-## Java-Friendly datetime string format
-
-def timestamp():
-    return datetime.datetime.now().isoformat() + 'Z'
-
-## -------------------------------------------
-## Core Admin!
-## TODO: These will eventually be abstracted for both Solr and Elasticsearch 
-
-def coreExists(host,name):
-    uri = host + 'admin/cores?action=STATUS&core=' + name
-    r = requests.get(uri)
-    if r.status_code == 200:
-        data = r.json()
-        if name in data['status'].keys():
-            if "name" in data['status'][name].keys():
-                if data['status'][name]["name"]==name:
-                    return True
-    return False
-
-
-def coreCreate(host,name,path,timeout=10000):
-
-    #Set this to true only when core is created
-    success = False
-
-    if not coreExists(host,name):
-        try:            
-            #Create the core in solr
-            uri = host + 'admin/cores?action=CREATE&name='+name+'&instanceDir='+path+'/conf&config=solrconfig.xml&dataDir='+path+'/data'
-            r = requests.get(uri)
-            if r.status_code == 200:
-                success = True
-                #Say cheese
-                print('Core',name,'created!')
-            else:
-                print('SOLR ERROR! Core',name,'could not be created! Have a nice day.')
-                print(json.dumps(r.json(),indent=2))
-
-        except:
-            print('NETWORK ERROR! Could not connect to Solr server on',host,' ... Have a nice day.')
-
-    return success
-
-def coreList(host):
-    cores = []
-    try:            
-        #Lookup all the cores:
-        uri = host + 'admin/cores?action=STATUS'
-        r = requests.get(uri)
-        if r.status_code == 200:
-            #Say cheese
-            cores = list(r.json()['status'].keys())
-
-        else:
-            print('SOLR ERROR! Cores could not be listed! Have a nice day.')
-            print(json.dumps(r.json(),indent=2))
-
-    except:
-        print('NETWORK ERROR! Could not connect to Solr server on',host,' ... Have a nice day.')
-    
-    return cores
+from . import solr
 
 ## -------------------------------------------
 ## Indexing!
@@ -81,7 +8,7 @@ def coreList(host):
 def indexableGroups(groups,contenttype='concept'):
     """ Generates concept records for Solr, similar to how ES Bulk indexing
         uses a generator to generate bulk index/update actions """
-    createtime = timestamp()
+    createtime = solr.timestamp()
     for group in groups:
         key = group.key
         for label in group.labels:
@@ -125,7 +52,7 @@ def indexableLabels(labels,contenttype='concept'):
     """ Generates labels for indexing, similar to how ES Bulk indexing
         uses a generator to generate bulk index/update actions """
 
-    createtime = timestamp()
+    createtime = solr.timestamp()
     for key in labels.keys():
         for label in labels[key]:
             labelid = key + '_' + str(label.docid) + '_' + str(label.sentenceid)
@@ -212,15 +139,15 @@ def suggest(prefix,dictionary="conceptLabelSuggester",count=25,build=False):
 ##==========================================================
 # MAIN API ENTRY POINT!  USE THIS!
 
-class SkipchunkQuery():
+class GraphQuery():
 
     ## -------------------------------------------
     # Accepts a skipchunk object to index the required data in Solr
     def index(self,skipchunk,timeout=10000):
 
-        isCore = coreExists(self.host,skipchunk.name)
+        isCore = solr.indexExists(self.host,skipchunk.graphname)
         if not isCore:
-            isCore = coreCreate(self.host,skipchunk.name,skipchunk.solr_data)
+            isCore = solr.indexCreate(self.host,skipchunk.graphname,skipchunk.solr_graph_data)
 
         if isCore:
             indexer = pysolr.Solr(self.solr_uri, timeout=timeout)
@@ -228,12 +155,14 @@ class SkipchunkQuery():
             indexer.add(list(indexableGroups(skipchunk.conceptgroups,contenttype="concept")),commit=True)
 
     def cores(self):
-        return coreList(self.host)
+        cores = solr.indexList(self.host)
+        indexes = [name for name in cores if '-graph' in name]
+        return indexes
 
     def changeCore(self,name):
-        if coreExists(self.host,name):
-            self.name = name
-            self.solr_uri = self.host + name
+        if solr.indexExists(self.host,name):
+            self.name = name + '-graph'
+            self.solr_uri = self.host + self.name
             self.select_handler = pysolr.Solr(self.solr_uri)
             self.suggest_handler = pysolr.Solr(self.solr_uri, search_handler='/suggest')            
             return True
@@ -483,8 +412,8 @@ class SkipchunkQuery():
     # name:: the name of the solr core
     def __init__(self,host,name):
         self.host = host
-        self.name = name
-        self.solr_uri = host + name
+        self.name = name + '-graph'
+        self.solr_uri = self.host + self.name
         self.select_handler = pysolr.Solr(self.solr_uri)
         self.suggest_handler = pysolr.Solr(self.solr_uri, search_handler='/suggest')
 
@@ -514,8 +443,8 @@ if __name__ == "__main__":
             kind = sys.argv[i+1]
             term = sys.argv[i+2]
 
-            if coreExists('http://localhost:8983/solr/',core):
-                sq = SkipchunkQuery('http://localhost:8983/solr/',core)
+            if solr.indexExists('http://localhost:8983/solr/',core):
+                sq = GraphQuery('http://localhost:8983/solr/',core)
                 #sq.explore(term,contenttype=kind,build=False)
                 sq.graph(term)
             else:

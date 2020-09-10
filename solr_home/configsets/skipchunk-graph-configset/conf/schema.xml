@@ -54,7 +54,7 @@ mmmmmmmmmmmmwwmmwwwmwX@@@@@@@@@@@@@@@@Qi'daxxx....RICH....Z=S!yIiUEJxjyUDwwmwwmm
 wwwwwwEEwwwwEEwEwwwwwb@@@@@@@@@@@@@@@@@@QKtxtxxx.........tExc!ix=XsxxxxtE%wwwwww
 EEEEEEEEEEEEEEEEEEEEEN@@@@@@@@@@@@@@@@@@@@QPyoxxtt.....xttxnaf=T==JSIxxxxk%PE-->
 
-<schema name="skipchunk" version="1.6">
+<schema name="skipchunk-graph" version="1.6">
 
    <!-- If you remove this field, you must _also_ disable the update log in solrconfig.xml
       or Solr won't start. _version_ and update log are required for SolrCloud
