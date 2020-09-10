@@ -549,7 +549,7 @@ EEEEEEEEEEEEEEEEEEEEEN@@@@@@@@@@@@@@@@@@@@QPyoxxtt.....xttxnaf=T==JSIxxxxk%PE-->
      <lst name="defaults">
        <str name="echoParams">explicit</str>
        <int name="rows">10</int>
-       <str name="df">title,content</str>
+       <str name="df">content</str>
        <!-- Change from JSON to XML format (the default prior to Solr 7.0)
           <str name="wt">xml</str> 
          -->
@@ -559,7 +559,7 @@ EEEEEEEEEEEEEEEEEEEEEN@@@@@@@@@@@@@@@@@@@@QPyoxxtt.....xttxnaf=T==JSIxxxxk%PE-->
 
   <initParams path="/update/**,/select">
     <lst name="defaults">
-      <str name="df">title,content</str>
+      <str name="df">content</str>
     </lst>
   </initParams>
 

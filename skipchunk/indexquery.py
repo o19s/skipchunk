@@ -50,8 +50,9 @@ class IndexQuery():
     ## -------------------------------------------
     # Pretty-prints a graph walk of all suggested concepts and their verbs given a starting term prefix
 
-    def search(self,query):
-        return solr.passthrough(self.solr_uri,'&'+query)
+    def search(self,querystring,handler="select"):
+        uri = self.solr_uri + '/' + handler + '?'+querystring
+        return solr.passthrough(uri)
 
     ## -------------------------------------------
     # host:: the url of the solr server

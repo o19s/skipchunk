@@ -161,7 +161,9 @@ class GraphQuery():
 
     def changeCore(self,name):
         if solr.indexExists(self.host,name):
-            self.name = name + '-graph'
+            self.name = name
+            if '-graph' not in name:
+                self.name += '-graph'        
             self.solr_uri = self.host + self.name
             self.select_handler = pysolr.Solr(self.solr_uri)
             self.suggest_handler = pysolr.Solr(self.solr_uri, search_handler='/suggest')            
@@ -412,7 +414,9 @@ class GraphQuery():
     # name:: the name of the solr core
     def __init__(self,host,name):
         self.host = host
-        self.name = name + '-graph'
+        self.name = name
+        if '-graph' not in name:
+            self.name += '-graph'
         self.solr_uri = self.host + self.name
         self.select_handler = pysolr.Solr(self.solr_uri)
         self.suggest_handler = pysolr.Solr(self.solr_uri, search_handler='/suggest')

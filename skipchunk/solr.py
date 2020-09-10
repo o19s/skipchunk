@@ -2,6 +2,11 @@ import json
 import requests
 import datetime
 
+import jsonpickle
+
+def pretty(obj):
+    print(jsonpickle.encode(obj,indent=2))
+
 ## -------------------------------------------
 ## Java-Friendly datetime string format
 
@@ -70,11 +75,14 @@ def indexList(host):
 ## Pass-through query!
 ## Just take the query as provided, run it against solr, and return the raw response
 
-def passthrough(host,query):
+def passthrough(uri):
+    req = requests.get(uri)
+    #pretty(req)
+    return req.text
 
-    try:            
+    print(uri)
+    try:
         #Lookup all the cores:
-        uri = host + query
         r = requests.get(uri)
         if r.status_code == 200:
             #Say cheese
@@ -86,6 +94,6 @@ def passthrough(host,query):
             return r.json()
 
     except:
-        message = 'NETWORK ERROR! Could not connect to Solr server on',host,' ... Have a nice day.'
+        message = 'NETWORK ERROR! Could not connect to Solr server at',uri,' ... Have a nice day.'
         print(message)
         return {'message':message}
