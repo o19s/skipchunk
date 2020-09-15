@@ -77,23 +77,5 @@ def indexList(host):
 
 def passthrough(uri):
     req = requests.get(uri)
-    #pretty(req)
-    return req.text
-
-    print(uri)
-    try:
-        #Lookup all the cores:
-        r = requests.get(uri)
-        if r.status_code == 200:
-            #Say cheese
-            return r.json()
-
-        else:
-            print('SOLR ERROR! Something went wrong.')
-            print(json.dumps(r.json(),indent=2))
-            return r.json()
-
-    except:
-        message = 'NETWORK ERROR! Could not connect to Solr server at',uri,' ... Have a nice day.'
-        print(message)
-        return {'message':message}
+    return req.text,req.status_code
+    

@@ -239,23 +239,24 @@ EEEEEEEEEEEEEEEEEEEEEN@@@@@@@@@@@@@@@@@@@@QPyoxxtt.....xttxnaf=T==JSIxxxxk%PE-->
 
 <!-- *************************************************************** -->
 
-    <!-- A general text field that has reasonable, generic
-         cross-language defaults: it tokenizes with StandardTokenizer,
-   removes stop words from case-insensitive "stopwords.txt"
-   (empty by default), and down cases.  At query time only, it
-   also applies synonyms. -->
+    <!-- A High-Recall stemmed fieldtype -->
     <fieldType name="text_en" class="solr.TextField" positionIncrementGap="100">
       <analyzer type="index">
         <tokenizer class="solr.StandardTokenizerFactory"/>
+        <filter class="solr.StopFilterFactory" ignoreCase="true" words="lang/stopwords_en.txt" />
         <filter class="solr.LowerCaseFilterFactory"/>
+        <filter class="solr.PorterStemFilterFactory"/>
       </analyzer>
       <analyzer type="query">
         <tokenizer class="solr.StandardTokenizerFactory"/>
-        <filter class="solr.SynonymGraphFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="true" />
+        <filter class="solr.SynonymGraphFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="true"/>
+        <filter class="solr.StopFilterFactory" ignoreCase="true" words="lang/stopwords_en.txt" />
         <filter class="solr.LowerCaseFilterFactory"/>
+        <filter class="solr.PorterStemFilterFactory"/>
       </analyzer>
     </fieldType>
 
+    <!-- A High-Precision lemmatized and payloaded fieldtype -->
     <fieldType name="text_en_payloads" class="solr.TextField" positionIncrementGap="100">
       <analyzer type="index">
         <tokenizer class="solr.WhitespaceTokenizerFactory"/>

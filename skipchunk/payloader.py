@@ -64,15 +64,15 @@ class Payloader:
 
 					value = str(score) # + 'f'
 
-					payloads.append(tok.lemma_ + '|' + value)
+					payloads.append(tok.lemma_ + '|' + value + ' ')
 
 				else:
-					payloads.append(tok.text)
+					payloads.append(tok.text_with_ws)
 
 			else:
-				payloads.append(tok.text.replace('|',''))
+				payloads.append(tok.text_with_ws.replace('|',''))
 
-		return ' '.join([t for t in payloads if len(t)>0])
+		return ''.join([t for t in payloads if len(t)>0])
 
 	def __init__(self,pos_scores=_POS_SCORES_,dep_scores=_DEP_SCORES_):
 		self.dep_scores = dep_scores

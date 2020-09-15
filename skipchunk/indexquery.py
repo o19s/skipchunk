@@ -4,6 +4,8 @@ import pysolr
 from os import listdir
 from os.path import isfile, join
 
+from urllib.parse import urlencode
+
 from . import solr
 
 ## -------------------------------------------
@@ -51,17 +53,30 @@ class IndexQuery():
     # Pretty-prints a graph walk of all suggested concepts and their verbs given a starting term prefix
 
     def search(self,querystring,handler="select"):
+        if self.enrich_query:
+            querystring = self.enrich_query(querystring)
+        qs = urlencode(querystring)
+        uri = self.solr_uri + '/' + handler + '?' + qs
+        results,status = solr.passthrough(uri)
+        return results,status
+
+    def search2(self,querystring,handler="select"):
         uri = self.solr_uri + '/' + handler + '?'+querystring
         return solr.passthrough(uri)
+
 
     ## -------------------------------------------
     # host:: the url of the solr server
     # name:: the name of the solr core
-    def __init__(self,host,name):
+    def __init__(self,host,name,enrichquery=None):
         self.host = host
         self.name = name + '-index'
         self.solr_uri = self.host + self.name
         self.select_handler = pysolr.Solr(self.solr_uri)
+        if enrichquery:
+            self.enrich_query = enrichquery.enrich
+        else:
+            self.enrich_query = None
 
 
 ##==========================================================
