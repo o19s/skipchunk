@@ -1,21 +1,17 @@
 import json
-import pysolr
-
-from os import listdir
-from os.path import isfile, join
-
-from urllib.parse import urlencode
+import os
 
 from . import solr
+from . import elasticsearch
 
 ## -------------------------------------------
 ## Indexing!
 
 def indexableDocuments(path):
     #This is probably inefficient and can be improved with a bulk process or threads
-    for f in listdir(path):
-        filename = join(path, f) 
-        if isfile(filename) and '.json' in filename:
+    for f in os.listdir(path):
+        filename = os.path.join(path, f) 
+        if os.path.isfile(filename) and '.json' in filename:
             with open(filename) as doc:
                 yield json.load(doc)
 
@@ -25,63 +21,48 @@ def indexableDocuments(path):
 class IndexQuery():
 
     ## -------------------------------------------
-    # Accepts a skipchunk object to index the required data in Solr
-    def index(self,skipchunk,timeout=10000):
+    # Indexes content into the engine from the configured data directory
+    def index(self,timeout=10000):
+        return self.engine.index(list(indexableDocuments(self.engine.document_data)),timeout=timeout)
 
-        isCore = solr.indexExists(self.host,skipchunk.indexname)
-        if not isCore:
-            isCore = solr.indexCreate(self.host,skipchunk.indexname,skipchunk.solr_index_data)
-
-        if isCore:
-            indexer = pysolr.Solr(self.solr_uri, timeout=timeout)
-            indexer.add(list(indexableDocuments(skipchunk.document_data)),commit=True)
-
-    def cores(self):
-        cores = solr.indexList(self.host)
-        indexes = [name for name in cores if '-index' in name]
-        return indexes
-
-    def changeCore(self,name):
-        if solr.indexExists(self.host,name):
-            self.name = name + '-index'
-            self.solr_uri = self.host + self.name
-            self.select_handler = pysolr.Solr(self.solr_uri)
-            return True
-        return False
+    def indexes(self):
+        return self.engine.indexes(self.kind)
 
     ## -------------------------------------------
     # Pretty-prints a graph walk of all suggested concepts and their verbs given a starting term prefix
 
     def search(self,querystring,handler="select"):
-        if self.enrich_query:
-            querystring = self.enrich_query(querystring)
-        qs = urlencode(querystring)
-        uri = self.solr_uri + '/' + handler + '?' + qs
-        results,status = solr.passthrough(uri)
-        return results,status
-
-    def search2(self,querystring,handler="select"):
-        uri = self.solr_uri + '/' + handler + '?'+querystring
-        return solr.passthrough(uri)
-
+        return self.engine.search(querystring)
 
     ## -------------------------------------------
-    # host:: the url of the solr server
-    # name:: the name of the solr core
-    def __init__(self,host,name,enrichquery=None):
-        self.host = host
-        self.name = name + '-index'
-        self.solr_uri = self.host + self.name
-        self.select_handler = pysolr.Solr(self.solr_uri)
-        if enrichquery:
-            self.enrich_query = enrichquery.enrich
+    # host:: the url of the search engine server
+    # name:: the name of the index or collection
+    def __init__(self,config,enrich_query=None):
+        self.kind = "index"
+        self.host = config["host"]
+        self.name = config["name"]
+        self.engine_name = config["engine_name"].lower()
+        self.path = config["path"]
+        
+        #Setup the search engine
+        if self.engine_name in ["solr"]:
+            self.engine = solr.Solr(self.host,self.name,self.kind,self.path)
+
+        elif self.engine_name in ["elasticsearch","elastic","es"]:
+            raise ValueError("Sorry! Elastic isn't ready yet")
+        
+        else:
+            raise ValueError("Sorry! Only Solr or Elastic are currently supported")
+
+        if enrich_query:
+            self.enrich_query = enrich_query.enrich
         else:
             self.enrich_query = None
 
 
 ##==========================================================
 # Command line explorer!
-
+"""
 if __name__ == "__main__":
     import sys
     import jsonpickle
@@ -110,3 +91,4 @@ if __name__ == "__main__":
                 sq.graph(term)
             else:
                 print('Core "',core,'" does not exists on localhost')
+"""

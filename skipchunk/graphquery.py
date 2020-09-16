@@ -143,8 +143,17 @@ class GraphQuery():
 
     ## -------------------------------------------
     # Accepts a skipchunk object to index the required data in Solr
-    def index(self,skipchunk,timeout=10000):
 
+    def index(self,skipchunk,timeout=10000):
+        predicatedocs = list(indexableGroups(skipchunk.predicategroups,contenttype="predicate"))
+        conceptdocs = list(indexableGroups(skipchunk.conceptgroups,contenttype="concept"))
+        return self.engine.index(conceptdocs+predicatedocs,timeout=timeout)
+
+    def indexes(self):
+        return self.engine.indexes(self.kind)
+
+    """
+    def index2(self,skipchunk,timeout=10000):
         isCore = solr.indexExists(self.host,skipchunk.graphname)
         if not isCore:
             isCore = solr.indexCreate(self.host,skipchunk.graphname,skipchunk.solr_graph_data)
@@ -153,7 +162,7 @@ class GraphQuery():
             indexer = pysolr.Solr(self.solr_uri, timeout=timeout)
             indexer.add(list(indexableGroups(skipchunk.predicategroups,contenttype="predicate")),commit=True)
             indexer.add(list(indexableGroups(skipchunk.conceptgroups,contenttype="concept")),commit=True)
-
+    
     def cores(self):
         cores = solr.indexList(self.host)
         indexes = [name for name in cores if '-graph' in name]
@@ -169,6 +178,7 @@ class GraphQuery():
             self.suggest_handler = pysolr.Solr(self.solr_uri, search_handler='/suggest')            
             return True
         return False
+    """
 
     ## -------------------------------------------
     # Uses a streaming expression to fill in missing prefLabels after indexing
@@ -412,10 +422,24 @@ class GraphQuery():
     ## -------------------------------------------
     # host:: the url of the solr server
     # name:: the name of the solr core
-    def __init__(self,host,name):
-        self.host = host
-        self.name = name
-        if '-graph' not in name:
+    def __init__(self,config):
+        self.kind = "graph"
+        self.host = config["host"]
+        self.name = config["name"]
+        self.engine_name = config["engine_name"].lower()
+        self.path = config["path"]
+
+        #Setup the search engine
+        if self.engine_name in ["solr"]:
+            self.engine = solr.Solr(self.host,self.name,self.kind,self.path)
+
+        elif self.engine_name in ["elasticsearch","elastic","es"]:
+            raise ValueError("Sorry! Elastic isn't ready yet")
+        
+        else:
+            raise ValueError("Sorry! Only Solr or Elastic are currently supported")
+
+        if '-graph' not in self.name:
             self.name += '-graph'
         self.solr_uri = self.host + self.name
         self.select_handler = pysolr.Solr(self.solr_uri)

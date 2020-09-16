@@ -25,9 +25,9 @@ _POS_SCORES_ = {
 	'ADJ'  :  1.5, 	#adjective
 	'ADV'  :  1.5, 	#adverb
 	'INTJ' :  1.0, 	#interjection
-	'NOUN' :  2.5, 	#noun
-	'PROPN':  2.0, 	#proper noun
-	'VERB' :  2.5
+	'NOUN' :  2.0, 	#noun
+	'PROPN':  2.5, 	#proper noun
+	'VERB' :  2.0
 }
 
 """

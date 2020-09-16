@@ -3,6 +3,7 @@
 """Main module."""
 
 import os
+import re
 import json
 import spacy
 import shutil
@@ -351,10 +352,19 @@ def groupConcepts(data,minlabels=1):
 
 # --------------------------------------------------
 
-def textFromFields(doc,fields,strip_html=False,spacer='\n\n'):
+def textFromFields(doc,fields,strip_html=False,spacer='\n'):
 
     text = ""
+
     for field in fields:
+
+        #This is a separator used in the nlp.pipe process to split the fields back up 
+        #  after the spacy pipeline is executed on the larger text body.
+        #  This technique is used to improve performance and lower memory requirements
+        separator = '.\n\n_SKIPCHUNK_FIELDBREAK_' + field + '!\n\n'
+
+        text += separator
+
         if isinstance(doc[field], str):
             if strip_html:
                 string = html_strip.strip(doc[field])
@@ -373,7 +383,7 @@ def textFromFields(doc,fields,strip_html=False,spacer='\n\n'):
                     string = html_strip.strip(str(doc[field]))
                 else:
                     string = str(doc[field])
-                text += string
+                text += string + spacer
             except:
                 pass
 
@@ -405,6 +415,22 @@ class Skipchunk():
             tuples.append((text,post))
 
         return tuples
+
+    # --------------------------------------------------
+
+    def bulk(self,documents=[],fields=[],strip_html=False):
+        spacer = '\n\n'
+        tuples = []
+
+        if len(documents)==0:
+            raise ValueError('Specify at least one document')
+
+        if len(fields)==0:
+            raise ValueError('Specify at least one field to convert')
+
+        for post in data:
+            text = textFromFields(post,fields,strip_html=strip_html)
+            yield (text,post)
 
     # --------------------------------------------------
 
@@ -441,39 +467,54 @@ class Skipchunk():
             docconcepts = {}
             docpredicates = {}
 
-            payloads = []
+            field = ''
+            payloadfield = ''
+
+            separator = r'_SKIPCHUNK_FIELDBREAK_[a-z]+\!'
 
             for sentence in doc.sents:
 
-                #SKIPCHUNK PIPELINE STAGE
-                cons,preds = skipchunk(sentence,docid=docid,sentenceid=sentenceid,maxslop=maxslop,maxlength=maxconceptlength)
+                sentencetext = sentence.text.strip()
 
-                for concept in cons:
-                    if concept.length>=minconceptlength:
-                        if concept.key not in concepts:
-                            concepts[concept.key] = []
-                        concepts[concept.key].append(concept)
+                seps = re.findall(separator,sentencetext)
 
-                        if concept.key not in docconcepts:
-                            docconcepts[concept.key] = []
-                        docconcepts[concept.key].append(concept)
+                if len(seps)>0:
+                    sep = seps[0]
+                    field = sep[len('_SKIPCHUNK_FIELDBREAK_'):]
+                    field = field[:len(field)-1]
+                    payloadfield = field + '_payloads'
+                    rich[payloadfield] = []
+                    sentencetext = sentencetext.replace(sep,'')
 
-                for predicate in preds:
-                    if predicate.length>=minpredicatelength:
-                        if predicate.key not in predicates:
-                            predicates[predicate.key] = []
-                        predicates[predicate.key].append(predicate)
-                        if predicate.key not in docpredicates:
-                            docpredicates[predicate.key] = []
-                        docpredicates[predicate.key].append(predicate)
+                if len(sentencetext)>1:
 
-                #PAYLOAD PIPELINE STAGE
-                payloads.append(payloadify.enrich(sentence))
+                    #SKIPCHUNK PIPELINE STAGE
+                    cons,preds = skipchunk(sentence,docid=docid,sentenceid=sentenceid,maxslop=maxslop,maxlength=maxconceptlength)
 
-                sentenceid += 1
+                    for concept in cons:
+                        if concept.length>=minconceptlength:
+                            if concept.key not in concepts:
+                                concepts[concept.key] = []
+                            concepts[concept.key].append(concept)
 
-            #Messy to do this here...but it works!
-            rich["content_payloads"] = payloads
+                            if concept.key not in docconcepts:
+                                docconcepts[concept.key] = []
+                            docconcepts[concept.key].append(concept)
+
+                    for predicate in preds:
+                        if predicate.length>=minpredicatelength:
+                            if predicate.key not in predicates:
+                                predicates[predicate.key] = []
+                            predicates[predicate.key].append(predicate)
+                            if predicate.key not in docpredicates:
+                                docpredicates[predicate.key] = []
+                            docpredicates[predicate.key].append(predicate)
+
+                    #PAYLOAD PIPELINE STAGE
+                    rich[payloadfield].append(payloadify.enrich(sentence))
+
+                    sentenceid += 1
+            
             self.saveDocument(rich)
 
             rich["skipchunk_concepts"] = docconcepts
@@ -539,7 +580,7 @@ class Skipchunk():
                 pickle.dump(self.predicategroups,fd,protocol=pickle.HIGHEST_PROTOCOL)
 
     def __init__(self,
-            name,
+            config,
             spacy_model='en_core_web_lg',
             idfield='id',
             maxslop=4,
@@ -558,6 +599,7 @@ class Skipchunk():
         ):
 
         #Config:
+        name = config["name"]
         self.name = name
         self.graphname = name + '-graph'
         self.indexname = name + '-index'
@@ -591,7 +633,13 @@ class Skipchunk():
         self.predicategroups = None
 
         #Where we will keep stuff on disk:
-        self.skipchunk_data = os.path.join(os.getcwd(),'skipchunk_data')
+        if "path" not in config.keys():
+            #Calling module
+            self.skipchunk_data = os.path.join(os.getcwd(),'skipchunk_data')
+        else:
+            #Specified location on disk
+            self.skipchunk_data = config["path"]
+
         if not os.path.isdir(self.skipchunk_data):
             os.makedirs(self.skipchunk_data)
 
@@ -607,21 +655,6 @@ class Skipchunk():
         if not os.path.isdir(self.document_data):
             os.makedirs(self.document_data)
 
-        #TODO - get this outta here and put it in solr.py!
-        self.solr_graph_data = os.path.join(self.root, 'solr_graph')
-        self.solr_index_data = os.path.join(self.root, 'solr_index')
-        module_dir = os.path.dirname(os.path.abspath(__file__))
-        pathlen = module_dir.rfind('/')+1
-
-        if not os.path.isdir(self.solr_graph_data):
-            #Create configset and root path for data for the new solr graph core
-            graph_source = module_dir[0:pathlen] + '/solr_home/configsets/skipchunk-graph-configset'
-            shutil.copytree(graph_source,self.solr_graph_data)
-
-        if not os.path.isdir(self.solr_index_data):
-            #Create configset and root path for data for the new solr index core
-            index_source = module_dir[0:pathlen] + '/solr_home/configsets/skipchunk-index-configset'
-            shutil.copytree(index_source,self.solr_index_data)
 
         ### THE BIG PICTURE ######################################
         """
