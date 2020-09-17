@@ -1,6 +1,7 @@
 import json
 import pysolr
 from . import solr
+from . import elastic
 
 ## -------------------------------------------
 ## Indexing!

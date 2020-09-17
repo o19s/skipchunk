@@ -2,7 +2,7 @@ import json
 import os
 
 from . import solr
-from . import elasticsearch
+from . import elastic
 
 ## -------------------------------------------
 ## Indexing!
