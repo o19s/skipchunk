@@ -1,0 +1,53 @@
+{
+  "mappings": {
+    "properties": {
+      "key":            { "type":"keyword", "indexed":true,  "store":true},
+      "idiom":          { "type":"keyword", "indexed":true,  "store":true},
+      "label":          { "type":"keyword", "indexed":true,  "store":true, "copy_to":["text"]},
+      "conceptlabel":   { "type":"keyword", "indexed":true,  "store":true, "copy_to":["concept_suggest"]},
+      "predicatelabel": { "type":"keyword", "indexed":true,  "store":true, "copy_to":["predicate_suggest"]},
+      "preflabel":      { "type":"keyword", "indexed":true,  "store":true},
+      "prefcount":      { "type":"integer", "indexed":false, "store":true},
+      "total":          { "type":"integer", "indexed":false, "store":true},
+      "docid":          { "type":"keyword", "indexed":false, "store":true},
+      "sentenceid":     { "type":"keyword", "indexed":false, "store":true},
+      "start":          { "type":"integer", "indexed":false, "store":true},
+      "end":            { "type":"integer", "indexed":false, "store":true},
+      "length":         { "type":"integer", "indexed":false, "store":true},
+      "objectof":       { "type":"keyword", "indexed":true,  "store":true},
+      "subjectof":      { "type":"keyword", "indexed":true,  "store":true},
+      "dependency":     { "type":"keyword", "indexed":true,  "store":true},
+      "contenttype":    { "type":"keyword", "indexed":true,  "store":true},
+      "createtime":     { "type":"date",    "indexed":false, "store":true},
+      "text":           { "type":"text_en", "indexed":true,  "store":false},
+      "concept_suggest":   { "type":"search_as_you_type" },
+      "predicate_suggest": { "type":"search_as_you_type" }
+    }
+  },
+  "settings": {
+    "analysis": {
+      "filter": {
+        "english_stem": {
+          "type": "stemmer",
+          "language": "english"
+        }
+      },
+      "analyzer": {
+        "text_en": {
+          "type": "custom",
+          "char_filter": [
+            "html_strip"
+          ],
+          "tokenizer": "standard",
+          "filter": [
+            "lowercase",
+            "english_stem"
+          ]
+        }
+      }
+    },
+    "index": {
+      "number_of_shards": 1
+    }
+  }
+}
