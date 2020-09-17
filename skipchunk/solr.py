@@ -9,9 +9,6 @@ import urllib
 
 from .interfaces import SearchEngineInterface
 
-def pretty(obj):
-    print(jsonpickle.encode(obj,indent=2))
-
 ## -------------------------------------------
 ## Java-Friendly datetime string format
 
@@ -25,6 +22,59 @@ def timestamp():
 def passthrough(uri):
     req = requests.get(uri)
     return req.text,req.status_code
+
+def cleanTerm(term):
+    return term.replace('/','\\/').replace('"','')
+
+
+## -------------------------------------------
+## Debug Utils
+
+def printAggregate(agg):
+    if agg:
+        for f in agg:
+            print(f["label"],f["count"])
+
+def printSuggest(sugg):
+    if sugg:
+        for f in sugg:
+            print(f["term"],f["weight"])
+
+def pretty(obj):
+    print(jsonpickle.encode(obj,indent=2))
+
+## -------------------------------------------
+## Facets/Aggregations/Suggestions
+
+def aggregateQuery(field,mincount=1,limit=100):
+    return {
+        "facet.field":field,
+        "facet.limit":limit,
+        "facet.mincount":mincount,
+        "facet":"on"
+    }
+
+def parseAggregate(field,res):
+    facets = None
+    if (res.facets) and ("facet_fields" in res.facets.keys()) and (field in res.facets["facet_fields"].keys()):
+        labels = res.facets["facet_fields"][field]
+        facets = []
+        for i in range(len(labels)//2):
+            facets.append({"label":labels[i*2],"count":labels[i*2+1]})
+
+    return facets
+
+def suggest(prefix,dictionary="conceptLabelSuggester",count=25,build=False):
+    s = {
+        "suggest":"true",
+        "suggest.q":prefix,
+        "suggest.count":count,
+        "suggest.dictionary":dictionary
+    }
+    if build:
+        s["suggest.build"] = "true"
+
+    return s
 
 ## -------------------------------------------
 ## MAIN CLASS ENTRY POINT
@@ -41,21 +91,23 @@ class Solr(SearchEngineInterface):
 
         host = self.host
 
+        #Lookup all the cores:
+        uri = host + 'admin/cores?action=STATUS'
+
         try:            
-            #Lookup all the cores:
-            uri = host + 'admin/cores?action=STATUS'
 
             r = requests.get(uri)
             if r.status_code == 200:
                 #Say cheese
                 cores = list(r.json()['status'].keys())
+                cores = [c.replace('-' + self.kind,'') for c in cores if self.kind in c]
 
             else:
                 print('SOLR ERROR! Cores could not be listed! Have a nice day.')
                 print(json.dumps(r.json(),indent=2))
 
         except:
-            message = 'NETWORK ERROR! Could not connect to Solr server on',host,' ... Have a nice day.'
+            message = 'NETWORK ERROR! Could not connect to Solr server on',uri,' ... Have a nice day.'
             raise ValueError(message)
         
         return cores
@@ -109,7 +161,8 @@ class Solr(SearchEngineInterface):
 
 
             except:
-                message = 'NETWORK ERROR! Could not connect to Solr server on',host,' ... Have a nice day.'
+                uri = host + 'admin/cores?action=CREATE'
+                message = 'NETWORK ERROR! Could not connect to Solr server on',uri,' ... Have a nice day.'
                 raise ValueError(message)
 
         return success
@@ -148,48 +201,214 @@ class Solr(SearchEngineInterface):
     ## -------------------------------------------
     ## Graphing
 
-    def aggregateQuery(self,field:str,mincount=1,limit=100) -> dict:
-        #Crafts an aggregate to be used by the search engine
-        pass
-
-    def parseAggregate(self,field:str,res:dict) -> dict:
-        #parses an aggregate resultset normalizing against a generic interface
-        pass
-
-    def suggest(self,prefix:str,dictionary="conceptLabelSuggester",count=25,build=False) -> dict:
-        #crafts a suggestion query
-        pass
-
     def conceptVerbConcepts(self,concept:str,verb:str,mincount=1,limit=100) -> list:
         # Accepts a verb to find the concepts appearing in the same context
-        pass
+        subject = cleanTerm(concept)
+        verb = cleanTerm(verb)
+        objects = []
+        subjects = []
+
+        # Get all the docid and sentenceid pairs that contain both the concept AND verb
+        #    http://localhost:8983/solr/osc-blog/select?fl=docid%2Csentenceid&fq=subjectof%3A%22be%22%20OR%20objectof%3A%22be%22&q=label%3A%22open%20source%22&rows=1000
+        q="*"
+        fl="sentenceid"
+        fq=["(subjectof:\""+verb+"\" OR objectof:\""+verb+"\")","preflabel:\""+subject+"\""]
+        rows=10000
+        res = self.select_handler.search(q=q,fq=fq,fl=fl,rows=rows)
+
+        if len(res.docs)>0:
+
+            # Get all the other concepts that exist in those docid and sentenceid pairs
+            #   http://localhost:8983/solr/osc-blog/select?fl=*&fq=-preflabel%3A%22open%20source%22&fq=sentenceid%3A17%20AND%20docid%3Aafee4d71ccb3e19d36ee2cfddd6da618&q=contenttype%3Aconcept&rows=100
+            sentences = []
+            for doc in res.docs:
+                sentences.append("sentenceid:"+doc["sentenceid"])
+            sentenceids = " OR ".join(sentences)
+
+            q="*"
+            fq=[
+                "-preflabel:\""+subject+"\"",
+                #"(subjectof:\""+verb+"\" OR objectof:\""+verb+"\")",
+                "(" + sentenceids + ")"
+            ]
+            field = "preflabel"
+
+            facet = aggregateQuery(field,mincount,limit)
+            res   = self.select_handler.search(q=q,fq=fq,rows=rows,**facet)
+            objects = parseAggregate(field,res)
+        
+        return objects
+
 
     def conceptsNearVerb(self,verb:str,mincount=1,limit=100) -> list:
         # Accepts a verb to find the concepts appearing in the same context
-        pass
+        verb = cleanTerm(verb)
+
+        field = "preflabel"
+        q = "*:*"
+        fq = "objectof:"+verb+" OR subjectof:"+verb
+
+        facet = aggregateQuery(field,mincount,limit)
+        res = self.select_handler.search(q=q,fq=fq,rows=0,**facet)
+        aggregate = parseAggregate(field,res)
+
+        return aggregate
 
     def verbsNearConcept(self,concept:str,mincount=1,limit=100) -> list:
         # Accepts a concept to find the verbs appearing in the same context
-        pass
+        concept = cleanTerm(concept)
+
+        field = "subjectof"
+        q = concept
+        facet = aggregateQuery(field,mincount,limit)
+        res = self.select_handler.search(q=q,rows=0,**facet)
+        subjectofs = parseAggregate(field,res)
+
+        field = "objectof"
+        q = concept
+        facet = aggregateQuery(field,mincount,limit)
+        res = self.select_handler.search(q=q,rows=0,**facet)
+        objectofs = parseAggregate(field,res)
+
+        return subjectofs+objectofs
 
     def suggestConcepts(self,prefix:str,build=False) -> list:
         # Suggests a list of concepts given a prefix
-        pass
+        dictionary="conceptLabelSuggester"
+        query = suggest(prefix,dictionary=dictionary,count=5,build=build)
+        res = self.suggest_handler.search(q=prefix,**query)
+        return res.raw_response["suggest"][dictionary][prefix]["suggestions"]
 
     def suggestPredicates(self,prefix:str,build=False) -> list:
         # Suggests a list of predicates given a prefix
-        pass
+        objectofSuggestions = []
+        subjectofSuggestions = []
+
+        dictionary1="objectofLabelSuggester"
+        query1 = suggest(prefix,dictionary=dictionary1,count=5,build=build)
+        res1 = self.suggest_handler.search(q=prefix,**query1)
+        if dictionary1 in res1.raw_response["suggest"]:
+            objectofSuggestions = res1.raw_response["suggest"][dictionary1][prefix]["suggestions"]
+
+        dictionary2="subjectofLabelSuggester"
+        query2 = suggest(prefix,dictionary=dictionary2,count=5,build=build)
+        res2 = self.suggest_handler.search(q=prefix,**query2)
+        if dictionary2 in res2.raw_response["suggest"]:
+            subjectofSuggestions = res2.raw_response["suggest"][dictionary2][prefix]["suggestions"]
+
+        return objectofSuggestions
 
     def summarize(self,mincount=1,limit=100) -> list:
         # Summarizes a core
-        pass
+        q  = "*"
+        fq = "contenttype:concept"
+        field = "preflabel"
+
+        facet = aggregateQuery(field,mincount,limit)
+        res = self.select_handler.search(q=q,fq=fq,rows=0,**facet)
+        concepts = parseAggregate(field,res)
+
+        q2  = "*"
+        fq2 = "contenttype:predicate"
+        field2 = "preflabel"
+
+        facet2 = aggregateQuery(field2,mincount,limit)
+        res2 = self.select_handler.search(q=q2,fq=fq2,rows=0,**facet2)
+        predicates = parseAggregate(field2,res2)
+
+        return concepts,predicates
 
     def graph(self,subject:str,objects=5,branches=10) -> list:
         # Gets the subject-predicate-object graph for a subject
-        pass
+        tree = []
+
+        verbs = self.verbsNearConcept(subject)[0:branches]
+        branch = {
+            "label":subject,
+            "labeltype":"subject",
+            "relationships":[]
+        }
+        for verb in verbs:
+            v = verb["label"]
+            predicate = {
+                "label":v,
+                "weight":verb["count"],
+                "labeltype":"predicate",
+                "relationships":[]
+            }
+            cvc = self.conceptVerbConcepts(subject,v,limit=objects)
+            for o in cvc:
+                predicate["relationships"].append({
+                    "label":o["label"],
+                    "weight":o["count"],
+                    "labeltype":"object",
+                    "relationships":[]
+                })
+            branch["relationships"].append(predicate)
+
+        tree.append(branch)
+
+        return tree
 
     def explore(self,term,contenttype="concept",build=False,quiet=False,branches=10) -> list:
         # Pretty-prints a graph walk of all suggested concepts and their verbs given a starting term prefix
+
+        tree = []
+
+        if contenttype == "concept":
+            if not quiet:
+                print("\n=================FINDING '"+term+"' ==================")
+            for s in self.suggestConcepts(term,build=build):
+                verbs = self.verbsNearConcept(s["term"])[0:branches]
+                c = s["term"]
+                branch = {
+                    "label":c,
+                    "weight":s["weight"],
+                    "labeltype":"subject",
+                    "relationships":[]
+                }
+                for verb in verbs:
+                    v = verb["label"]
+                    predicate = {
+                        "label":v,
+                        "weight":verb["count"],
+                        "labeltype":"predicate",
+                        "relationships":[]
+                    }
+                    cvc = self.conceptVerbConcepts(c,v,limit=5)
+                    for o in cvc:
+                        predicate["relationships"].append({
+                            "label":o["label"],
+                            "weight":o["count"],
+                            "labeltype":"object",
+                            "relationships":[]
+                        })
+                    branch["relationships"].append(predicate)
+
+                tree.append(branch)
+
+                if not quiet:
+                    lst = ', '.join([a["label"]+"("+str(a["count"])+")" for a in verbs])
+                    print("")
+                    print(s["term"] + " (" + str(s["weight"]) + ")")
+                    print('\t',lst)
+                    print("")
+                    print('----------------------------------------------------')
+        
+        elif contenttype == "predicate":
+            if not quiet:
+                print("\n=================FINDING '"+term+"' ==================")
+            for s in self.suggestPredicates(term,build=build):
+                concepts = self.conceptsNearVerb(s["term"])[0:branches]
+                tree[s["term"]] = concepts
+                if not quiet:
+                    lst = ', '.join([a["label"]+"("+str(a["count"])+")" for a in verbs])
+                    print("")
+                    print(s["term"] + " (" + str(s["weight"]) + ")")
+                    print('\t',lst)
+                    print("")
+                    print('----------------------------------------------------')
+
         return tree
 
     def __init__(self,host,name,kind,path):
@@ -202,3 +421,11 @@ class Solr(SearchEngineInterface):
         self.root = os.path.join(self.path, name)
         self.solr_home = os.path.join(self.root, 'solr_'+self.kind)
         self.document_data = os.path.join(self.root, 'documents')
+
+        self.solr_uri = self.host + self.name
+
+        self.select_handler = pysolr.Solr(self.solr_uri, search_handler='/select')
+
+        if kind == "graph":
+            self.suggest_handler = pysolr.Solr(self.solr_uri, search_handler='/suggest')
+
