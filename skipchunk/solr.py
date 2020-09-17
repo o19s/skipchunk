@@ -422,8 +422,6 @@ class Solr(SearchEngineInterface):
         self.solr_home = os.path.join(self.root, 'solr_'+self.kind)
         self.document_data = os.path.join(self.root, 'documents')
 
-        self.solr_uri = self.host + self.name
-
         self.select_handler = pysolr.Solr(self.solr_uri, search_handler='/select')
 
         if kind == "graph":
