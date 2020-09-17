@@ -228,7 +228,7 @@ class Solr(SearchEngineInterface):
             q="*"
             fq=[
                 "-preflabel:\""+subject+"\"",
-                #"(subjectof:\""+verb+"\" OR objectof:\""+verb+"\")",
+                "contenttype:concept",
                 "(" + sentenceids + ")"
             ]
             field = "preflabel"
