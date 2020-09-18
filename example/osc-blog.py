@@ -9,7 +9,7 @@ from skipchunk import skipchunk as sc
 
 if __name__ == "__main__":
 
-    LOAD = False
+    LOAD = True
 
     skipchunk_config_solr = {
         "host":"http://localhost:8983/solr/",
@@ -27,8 +27,8 @@ if __name__ == "__main__":
 
     skipchunk_config = skipchunk_config_elastic
 
-    source = "blog-posts.json"
-    #source = "blog-posts-one.json"
+    #source = "blog-posts.json"
+    source = "blog-posts-one.json"
 
     print(timestamp()," | Initializing")
 
@@ -55,6 +55,7 @@ if __name__ == "__main__":
         s.save()
 
     print(timestamp()," | Indexing Graph")
+    gq.delete()
     gq.index(s)
 
     #print(timestamp()," | Indexing Content")

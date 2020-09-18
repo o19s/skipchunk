@@ -99,11 +99,14 @@ class GraphQuery():
         ok1 = self.engine.index(predicatedocs,timeout=timeout)
         if ok1:
             ok2 = self.engine.index(conceptdocs,timeout=timeout)
-            
+
         return (ok1 and ok2)
 
     def indexes(self):
         return self.engine.indexes(self.kind)
+
+    def delete(self):
+        return self.engine.indexDelete()
 
     ## -------------------------------------------
     # Calculates preflabels in the index for new concepts

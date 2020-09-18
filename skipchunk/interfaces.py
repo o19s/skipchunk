@@ -11,8 +11,12 @@ class SearchEngineInterface:
         #Returns true if the index exists on the host
         pass
 
-    def indexCreate(self,config: str,timeout=10000) -> bool:
-        #Creates a new index with a specified configuration
+    def indexCreate(self,timeout=10000) -> bool:
+        #Creates a new index for the already initialized engine params
+        pass
+
+    def indexDelete(self,timeout=10000) -> bool:
+        #Deletes the index as specified in the initialized engine params
         pass
 
     ## -------------------------------------------

@@ -144,6 +144,10 @@ class Elastic(SearchEngineInterface):
 
         return success
         
+    def indexDelete(self):
+        resp = self.es.indices.delete(index=self.name, ignore=[400, 404])
+        resp_msg(msg="Deleted index {}".format(self.name), resp=ElasticResp(resp), throw=False)
+
 
     ## -------------------------------------------
     ## Content Update
@@ -178,17 +182,10 @@ class Elastic(SearchEngineInterface):
     ## -------------------------------------------
     ## Graphing
 
-    def aggregateQuery(self,field:str,mincount=1,limit=100) -> dict:
-        #Crafts an aggregate to be used by the search engine
-        pass
-
     def parseAggregate(self,field:str,res:dict) -> dict:
         #parses an aggregate resultset normalizing against a generic interface
-        pass
-
-    def suggest(self,prefix:str,dictionary="conceptLabelSuggester",count=25,build=False) -> dict:
-        #crafts a suggestion query
-        pass
+        facets = [{"label":f["key"],"count":f["doc_count"]} for f in res["aggregations"][field]["buckets"]]
+        return facets
 
     def conceptVerbConcepts(self,concept:str,verb:str,mincount=1,limit=100) -> list:
         # Accepts a verb to find the concepts appearing in the same context
@@ -204,11 +201,45 @@ class Elastic(SearchEngineInterface):
 
     def suggestConcepts(self,prefix:str,build=False) -> list:
         # Suggests a list of concepts given a prefix
-        pass
+        query = {
+            "size":0,
+            "query": {
+                "match_phrase_prefix": { 
+                    "concept_suggest": prefix 
+                }
+            },
+            "aggs": {
+                "preflabel": {
+                    "terms": { 
+                        "field": "preflabel"
+                    }
+                }
+            }
+        }
+
+        res = es.search(index=self.name, body=query)
+        return parseAggregate(res)
 
     def suggestPredicates(self,prefix:str,build=False) -> list:
         # Suggests a list of predicates given a prefix
-        pass
+        query = {
+            "size":0,
+            "query": {
+                "match_phrase_prefix": { 
+                    "predicate_suggest": prefix
+                }
+            },
+            "aggs": {
+                "preflabel": {
+                    "terms": { 
+                        "field": "preflabel"
+                    }
+                }
+            }
+        }
+
+        res = es.search(index=self.name, body=query)
+        return parseAggregate(res)
 
     def summarize(self,mincount=1,limit=100) -> list:
         # Summarizes a core
