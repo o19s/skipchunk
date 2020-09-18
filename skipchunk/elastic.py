@@ -116,12 +116,14 @@ class Elastic(SearchEngineInterface):
         if not self.indexExists(name):
             try:
 
-                if not os.path.isdir(self.elastic_home):
-                    #Create the directories to hold the Elastic conf and data
-                    module_dir = os.path.dirname(os.path.abspath(__file__))
-                    pathlen = module_dir.rfind('/')+1
-                    graph_source = module_dir[0:pathlen] + '/elastic_home/configsets/skipchunk-'+self.kind+'-configset'
-                    shutil.copytree(graph_source,self.elastic_home)
+                if os.path.isdir(self.elastic_home):
+                    shutil.rmtree(self.elastic_home)
+
+                #Create the directories to hold the Elastic conf and data
+                module_dir = os.path.dirname(os.path.abspath(__file__))
+                pathlen = module_dir.rfind('/')+1
+                graph_source = module_dir[0:pathlen] + '/elastic_home/configsets/skipchunk-'+self.kind+'-configset'
+                shutil.copytree(graph_source,self.elastic_home)
 
                 cfg_json_path = self.elastic_home + '/skipchunk-'+self.kind+'-schema.json'
 

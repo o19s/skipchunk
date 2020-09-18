@@ -34,7 +34,7 @@ _POS_SCORES_ = {
 Part of Speech payloads are cool, but the real juice is from dependencies!
 Specifically: subjects, objects, and roots.
 
-The intuition here is because the aboutness of sentences should be considered, not just the mentioning of a concept.
+Intuition: the "aboutness" of sentences is more important than just the concepts mentioned.
 """
 
 _DEP_SCORES_ = {
@@ -44,6 +44,7 @@ _DEP_SCORES_ = {
 	'pobj'     : 1.5,
 	'root'     : 2.0
 }
+
 
 class Payloader:
 

@@ -58,7 +58,8 @@ if __name__ == "__main__":
     gq.delete()
     gq.index(s)
 
-    #print(timestamp()," | Indexing Content")
-    #iq.index()
+    print(timestamp()," | Indexing Content")
+    iq.delete()
+    iq.index()
     
     print(timestamp()," | !!!~~~~~DONE~~~~~!!!")

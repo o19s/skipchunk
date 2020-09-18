@@ -23,10 +23,13 @@ class IndexQuery():
     ## -------------------------------------------
     # Indexes content into the engine from the configured data directory
     def index(self,timeout=10000):
-        return self.engine.index(list(indexableDocuments(self.engine.document_data)),timeout=timeout)
+        return self.engine.index(indexableDocuments(self.engine.document_data),timeout=timeout)
 
     def indexes(self):
         return self.engine.indexes(self.kind)
+
+    def delete(self):
+        return self.engine.indexDelete()
 
     ## -------------------------------------------
     # Pretty-prints a graph walk of all suggested concepts and their verbs given a starting term prefix
