@@ -103,7 +103,7 @@ class GraphQuery():
         return (ok1 and ok2)
 
     def indexes(self):
-        return self.engine.indexes(self.kind)
+        return self.engine.indexes()
 
     def delete(self):
         return self.engine.indexDelete()

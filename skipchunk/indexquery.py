@@ -26,7 +26,7 @@ class IndexQuery():
         return self.engine.index(indexableDocuments(self.engine.document_data),timeout=timeout)
 
     def indexes(self):
-        return self.engine.indexes(self.kind)
+        return self.engine.indexes()
 
     def delete(self):
         return self.engine.indexDelete()
