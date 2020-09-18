@@ -12,7 +12,12 @@ from elasticsearch import Elasticsearch
 from .interfaces import SearchEngineInterface
 
 #from ltr.helpers.handle_resp import resp_msg
-
+def resp_msg(msg, resp, throw=True):
+    print('{} [Status: {}]'.format(msg, resp.status_code))
+    if resp.status_code >= 400:
+        print(resp.text)
+        if throw:
+            raise RuntimeError(resp.text)
 
 
 def pretty(obj):
@@ -31,9 +36,6 @@ def timestamp():
 def passthrough(uri):
     req = requests.get(uri)
     return req.text,req.status_code
-
-
-
 
 class ElasticResp():
     def __init__(self, resp):
@@ -64,27 +66,111 @@ class Elastic(SearchEngineInterface):
 
     ## -------------------------------------------
     ## Index Admin
-    def indexes(self, kind=None) -> list:
+    def indexes(self) -> list:
         #List the existing indexes of the given kind
-        pass
+
+        indexes = []
+
+        host = self.host
+        uri = host + "_cat/indices?format=json"
+
+        try:
+            r = requests.get(uri)
+            if r.status_code == 200:
+                #Say cheese
+                indexes = r.json()
+                indexes = [i.index.replace('-' + self.kind,'') for i in indexes if '-'+self.kind in i.index]
+
+            else:
+                print('ELASTIC ERROR! Cores could not be listed! Have a nice day.')
+                print(json.dumps(r.json(),indent=2))
+
+        except:
+            message = 'NETWORK ERROR! Could not connect to Elastic server on',uri,' ... Have a nice day.'
+            raise ValueError(message)  
+
+        return indexes      
+
 
     def indexExists(self,name: str) -> bool:
         #Returns true if the index exists on the host
-        pass
+        host = self.host
+        uri = host + name
+        r = requests.get(uri)
+        if r.status_code == 200:
+            data = r.json()
+            if name in data.keys():
+                return True
+        return False
 
-    def indexCreate(self,config: str,timeout=10000) -> bool:
+    def indexCreate(self,timeout=10000) -> bool:
         #Creates a new index with a specified configuration
-        pass
+
+        #Set this to true only when core is created
+        success = False
+
+        host = self.host
+        name = self.name
+        path = self.root
+
+        if not self.indexExists(name):
+            try:
+
+                if not os.path.isdir(self.elastic_home):
+                    #Create the directories to hold the Elastic conf and data
+                    module_dir = os.path.dirname(os.path.abspath(__file__))
+                    pathlen = module_dir.rfind('/')+1
+                    graph_source = module_dir[0:pathlen] + '/elastic_home/configsets/skipchunk-'+self.kind+'-configset'
+                    shutil.copytree(graph_source,self.elastic_home)
+
+                cfg_json_path = self.elastic_home + '/skipchunk-'+self.kind+'-schema.json'
+
+                #Create the index in Elastic
+                with open(cfg_json_path) as src:
+                    settings = json.load(src)
+                    res = self.es.indices.create(self.name, body=settings)
+                    r = ElasticResp(res)
+                    if r.status_code == 200:
+                        success = True
+                        #Say cheese
+                        print('Index',name,'created!')
+                    else:
+                        print('ELASTIC ERROR! Index',name,'could not be created! Have a nice day.')
+                        print(json.dumps(r.json(),indent=2))
+
+            except:
+                message = 'NETWORK ERROR! Could not connect to Elasticsearch server on',host,' ... Have a nice day.'
+                raise ValueError(message)
+
+        return success
+        
 
     ## -------------------------------------------
     ## Content Update
-    def index(self, documents:list, path: str, timeout=10000) -> str:
+    def index(self, documents, timeout=10000) -> str:
         #Accepts a skipchunk object to index the required data
-        pass
 
+        def bulkDocs(doc_src,name):
+            for doc in doc_src:
+                addCmd = {"_index": name,
+                          "_id": doc['id'],
+                          "_source": doc}
+                yield addCmd
+
+        isIndex = self.indexExists(self.name)
+        if not isIndex:
+            isIndex = self.indexCreate()
+
+        if isIndex:
+            res = elasticsearch.helpers.bulk(self.es, bulkDocs(documents,self.name), chunk_size=100)
+            self.es.indices.refresh(index=self.name)
+            r = BulkResp(res)
+            if r.status_code<400:
+                return True
+
+        return False
     ## -------------------------------------------
     ## Querying
-
     def search(self,querystring, handler: str) -> str:
         #Searches the engine for the query
         pass
@@ -147,6 +233,8 @@ class Elastic(SearchEngineInterface):
         self.document_data = os.path.join(self.root, 'documents')
 
         self.elastic_uri = self.host + self.name
+
+        self.es = Elasticsearch(self.host)
 
 """
 

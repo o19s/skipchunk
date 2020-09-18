@@ -46,10 +46,12 @@ class IndexQuery():
         
         #Setup the search engine
         if self.engine_name in ["solr"]:
+            self.engine_name = "solr"
             self.engine = solr.Solr(self.host,self.name,self.kind,self.path)
-
+            
         elif self.engine_name in ["elasticsearch","elastic","es"]:
-            raise ValueError("Sorry! Elastic isn't ready yet")
+            self.engine_name = "elastic"
+            self.engine = elastic.Elastic(self.host,self.name,self.kind,self.path)
         
         else:
             raise ValueError("Sorry! Only Solr or Elastic are currently supported")

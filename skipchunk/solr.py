@@ -125,7 +125,7 @@ class Solr(SearchEngineInterface):
                 if "name" in data['status'][name].keys():
                     if data['status'][name]["name"]==name:
                         return True
-        return False        
+        return False
 
     def indexCreate(self,timeout=10000) -> bool:
         #Creates a new index with a specified configuration
@@ -177,9 +177,13 @@ class Solr(SearchEngineInterface):
 
         if isCore:
             indexer = pysolr.Solr(self.solr_uri, timeout=timeout)
-            indexer.add(documents,commit=True)
 
-        return True
+            #documents is a generator so we convert it to a list first
+            indexer.add(list(documents),commit=True)
+
+            return True
+
+        return False
 
     ## -------------------------------------------
     ## Querying

@@ -1,5 +1,4 @@
 import json
-import pysolr
 from . import solr
 from . import elastic
 
@@ -7,7 +6,7 @@ from . import elastic
 ## Indexing!
 
 def indexableGroups(groups,contenttype='concept'):
-    """ Generates concept records for Solr, similar to how ES Bulk indexing
+    """ Generates concept records, similar to how ES Bulk indexing
         uses a generator to generate bulk index/update actions """
     createtime = solr.timestamp()
     for group in groups:
@@ -93,9 +92,15 @@ class GraphQuery():
     # Accepts a skipchunk object to index the required data in Solr
 
     def index(self,skipchunk,timeout=10000):
-        predicatedocs = list(indexableGroups(skipchunk.predicategroups,contenttype="predicate"))
-        conceptdocs = list(indexableGroups(skipchunk.conceptgroups,contenttype="concept"))
-        return self.engine.index(conceptdocs+predicatedocs,timeout=timeout)
+        ok1 = False
+        ok2 = False
+        predicatedocs = indexableGroups(skipchunk.predicategroups,contenttype="predicate")
+        conceptdocs = indexableGroups(skipchunk.conceptgroups,contenttype="concept")
+        ok1 = self.engine.index(predicatedocs,timeout=timeout)
+        if ok1:
+            ok2 = self.engine.index(conceptdocs,timeout=timeout)
+            
+        return (ok1 and ok2)
 
     def indexes(self):
         return self.engine.indexes(self.kind)
@@ -162,25 +167,22 @@ class GraphQuery():
         self.kind = "graph"
         self.host = config["host"]
         self.name = config["name"]
-        self.engine_name = config["engine_name"].lower()
         self.path = config["path"]
+
+        self.engine_name = config["engine_name"].lower()
 
         #Setup the search engine
         if self.engine_name in ["solr"]:
+            self.engine_name = "solr"
             self.engine = solr.Solr(self.host,self.name,self.kind,self.path)
-
+            
         elif self.engine_name in ["elasticsearch","elastic","es"]:
-            raise ValueError("Sorry! Elastic isn't ready yet")
+            self.engine_name = "elastic"
+            self.engine = elastic.Elastic(self.host,self.name,self.kind,self.path)
+
         
         else:
             raise ValueError("Sorry! Only Solr or Elastic are currently supported")
-
-        if '-graph' not in self.name:
-            self.name += '-graph'
-        self.solr_uri = self.host + self.name
-        self.select_handler = pysolr.Solr(self.solr_uri)
-        self.suggest_handler = pysolr.Solr(self.solr_uri, search_handler='/suggest')
-
 
 ##==========================================================
 # Command line explorer!
