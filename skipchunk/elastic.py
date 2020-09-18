@@ -184,6 +184,11 @@ class Elastic(SearchEngineInterface):
     ## -------------------------------------------
     ## Graphing
 
+    def parseSuggest(self,field:str,res:dict) -> dict:
+        #parses an aggregate resultset normalizing against a generic interface
+        facets = [{"term":f["key"],"weight":f["doc_count"]} for f in res["aggregations"][field]["buckets"]]
+        return facets
+
     def parseAggregate(self,field:str,res:dict) -> dict:
         #parses an aggregate resultset normalizing against a generic interface
         facets = [{"label":f["key"],"count":f["doc_count"]} for f in res["aggregations"][field]["buckets"]]
@@ -294,7 +299,7 @@ class Elastic(SearchEngineInterface):
         }
 
         res = self.es.search(index=self.name, body=query)
-        return self.parseAggregate(field,res)
+        return self.parseSuggest(field,res)
 
     def suggestPredicates(self,prefix:str,build=False) -> list:
         # Suggests a list of predicates given a prefix
@@ -318,7 +323,7 @@ class Elastic(SearchEngineInterface):
         }
 
         res = self.es.search(index=self.name, body=query)
-        return self.parseAggregate(field,res)
+        return self.parseSuggest(field,res)
 
     def summarize(self,mincount=1,limit=100) -> list:
         # Summarizes a core
