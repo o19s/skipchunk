@@ -29,6 +29,13 @@ def pretty(obj):
 def timestamp():
     return datetime.datetime.now().isoformat() + 'Z'
 
+
+## -------------------------------------------
+## Fix search terms for searchy searchy
+
+def cleanTerm(term):
+    return term.replace('/','\\/').replace('"','')
+
 ## -------------------------------------------
 ## Pass-through query!
 ## Just take the query as provided, run it against elasticsearch, and return the raw response
@@ -196,7 +203,88 @@ class Elastic(SearchEngineInterface):
 
     def conceptVerbConcepts(self,concept:str,verb:str,mincount=1,limit=100) -> list:
         # Accepts a verb to find the concepts appearing in the same context
-        return []
+        subject = cleanTerm(concept)
+        verb = cleanTerm(verb)
+        objects = []
+        subjects = []
+
+        # Get all the docid and sentenceid pairs that contain both the concept AND verb
+
+        query = {
+            "size":10000,
+            "_source": ["sentenceid"],
+            "query": {
+              "bool": {
+                "must":[
+                    {"bool":{
+                        "should": [
+                          {"match": {
+                            "objectof": verb
+                          }},
+                          {"match": {
+                            "subjectof": verb
+                          }}
+                        ]                    
+                    }},
+                    {
+                      "match":{
+                          "preflabel": subject
+                      }
+                    }
+                ]
+              }
+            }
+        }
+        
+        res = self.es.search(index=self.name, body=query)
+        #res = ElasticResp(r)
+
+        if res["hits"]["total"]["value"]>0:
+
+            # Get all the other concepts that exist in those docid and sentenceid pairs
+            #   http://localhost:8983/solr/osc-blog/select?fl=*&fq=-preflabel%3A%22open%20source%22&fq=sentenceid%3A17%20AND%20docid%3Aafee4d71ccb3e19d36ee2cfddd6da618&q=contenttype%3Aconcept&rows=100
+            sentences = []
+            shoulds = []
+
+            for doc in res["hits"]["hits"]:
+                sentenceid = doc["_source"]["sentenceid"]
+                sentences.append({
+                    "term": {"sentenceid":sentenceid}
+                })
+                shoulds.append({
+                    "bool": {
+                        "must": [
+                            {"term": {"contenttype": "concept"}},
+                            {"term": {"sentenceid": sentenceid}}
+                        ],
+                        "must_not": [
+                            {"term": {"preflabel": subject}}
+                        ]
+                    }
+                })
+
+            field2 = "preflabel"
+
+            query2 = {
+                "size":0,
+                "query": {
+                    "bool": {
+                        "should": shoulds
+                    }
+                },
+                "aggs": {
+                    "preflabel": {
+                        "terms": { 
+                            "field": field2
+                        }
+                    }
+                }
+            }
+
+            res2 = self.es.search(index=self.name, body=query2)
+            objects = self.parseAggregate(field2,res2)
+        
+        return objects
 
     def conceptsNearVerb(self,verb:str,mincount=1,limit=100) -> list:
         # Accepts a verb to find the concepts appearing in the same context
@@ -210,10 +298,10 @@ class Elastic(SearchEngineInterface):
               "bool": {
                 "should": [
                   {"match": {
-                    "objectof": "tune"
+                    "objectof": verb
                   }},
                   {"match": {
-                    "subjectof": "tune"
+                    "subjectof": verb
                   }}
                 ]
               }
@@ -261,7 +349,7 @@ class Elastic(SearchEngineInterface):
                 }
             },
             "aggs": {
-                "subjectof": {
+                "objectof": {
                     "terms": { 
                         "field": field2
                     }
@@ -373,8 +461,37 @@ class Elastic(SearchEngineInterface):
 
     def graph(self,subject:str,objects=5,branches=10) -> list:
         # Gets the subject-predicate-object graph for a subject
-        return []
 
+        # Gets the subject-predicate-object graph for a subject
+        tree = []
+
+        verbs = self.verbsNearConcept(subject)[0:branches]
+        branch = {
+            "label":subject,
+            "labeltype":"subject",
+            "relationships":[]
+        }
+        for verb in verbs:
+            v = verb["label"]
+            predicate = {
+                "label":v,
+                "weight":verb["count"],
+                "labeltype":"predicate",
+                "relationships":[]
+            }
+            cvc = self.conceptVerbConcepts(subject,v,limit=objects)
+            for o in cvc:
+                predicate["relationships"].append({
+                    "label":o["label"],
+                    "weight":o["count"],
+                    "labeltype":"object",
+                    "relationships":[]
+                })
+            branch["relationships"].append(predicate)
+
+        tree.append(branch)
+
+        return tree
 
     def explore(self,term,contenttype="concept",build=False,quiet=False,branches=10) -> list:
         # Pretty-prints a graph walk of all suggested concepts and their verbs given a starting term prefix
