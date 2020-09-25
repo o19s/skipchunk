@@ -14,15 +14,15 @@ with open('HISTORY.rst') as history_file:
 requirements = [
     'spacy>=2.2.4', 
     #'neuralcoref==4.0',
-    'nltk>=3.5',
-    'pysolr>=3.9.0',
+    'nltk==3.5',
+    'pysolr==3.9.0',
     'elasticsearch==7.9.1'
     'Click>=6.0',
-    'tqdm>=4.48.2',
+    'tqdm==4.48.2',
     'requests==2.23.0',
     'jsonpickle==1.4.1',
-    'bs4>=0.0.1',
-    'lxml>=4.5.2'
+    'bs4==0.0.1',
+    'lxml==4.5.2'
 ]
 
 setup_requirements = [ ]
