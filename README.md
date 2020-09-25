@@ -10,7 +10,7 @@ Easy natural language concept search for the masses.
 
 Out of the box it provides a hassle-free autosuggest for any corpus from scratch, and latent knowledge graph extraction and exploration.
 
-* Free software: Apache 2.0 license
+* Free software: MIT License
 * Documentation: https://skipchunk.readthedocs.io.
 
 ## Install

@@ -5,7 +5,7 @@ Credits
 Development Lead
 ----------------
 
-* Max Irwin <max_irwin@yahoo.com>
+* Max Irwin <mirwin@opensourceconnections.com>
 
 Contributors
 ------------

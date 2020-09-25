@@ -5,7 +5,7 @@
 
 from setuptools import setup, find_packages
 
-with open('README.rst') as readme_file:
+with open('README.md') as readme_file:
     readme = readme_file.read()
 
 with open('HISTORY.rst') as history_file:
@@ -31,7 +31,7 @@ test_requirements = [ ]
 
 setup(
     author="Max Irwin",
-    author_email='max_irwin@yahoo.com',
+    author_email='mirwin@opensourceconnections.com',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
@@ -58,6 +58,6 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/o19s/skipchunk',
-    version='0.1.0',
+    version='0.9.0',
     zip_safe=False,
 )
