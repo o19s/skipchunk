@@ -427,7 +427,8 @@ class Elastic(SearchEngineInterface):
             },
             "aggs": {
                 "preflabel": {
-                    "terms": { 
+                    "terms": {
+                        "size":limit,
                         "field": "preflabel"
                     }
                 }
@@ -443,7 +444,8 @@ class Elastic(SearchEngineInterface):
             },
             "aggs": {
                 "preflabel": {
-                    "terms": { 
+                    "terms": {
+                        "size":limit, 
                         "field": "preflabel"
                     }
                 }
@@ -497,7 +499,7 @@ class Elastic(SearchEngineInterface):
         # Pretty-prints a graph walk of all suggested concepts and their verbs given a starting term prefix
         return []
 
-    def __init__(self,host,name,kind,path):
+    def __init__(self,host,name,kind,path,enrich_query=None):
         self.host = host
         self.name = name + '-' + kind
         self.kind = kind
@@ -508,5 +510,7 @@ class Elastic(SearchEngineInterface):
         self.document_data = os.path.join(self.root, 'documents')
 
         self.elastic_uri = self.host + self.name
+
+        self.enrich_query = enrich_query
 
         self.es = Elasticsearch(self.host)

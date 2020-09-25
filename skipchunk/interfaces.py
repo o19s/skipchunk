@@ -80,23 +80,3 @@ class SearchEngineInterface:
     def explore(self,term,contenttype="concept",build=False,quiet=False,branches=10) -> list:
         # Pretty-prints a graph walk of all suggested concepts and their verbs given a starting term prefix
         pass
-
-
-## -------------------------------------------
-## Pipeline abstract classes
-
-class Text_to_Text_PipelineInterface:
-    def enrich(self,text:str) -> str:
-        pass
-
-class Text_to_Spacy_PipelineInterface:
-    def enrich(self,text:str) -> object:
-        pass
-
-class Spacy_to_Spacy_PipelineInterface:
-    def enrich(self,stream:object) -> object:
-        pass
-
-class Spacy_to_Text_PipelineInterface:
-    def enrich(self,stream:object) -> str:
-        pass

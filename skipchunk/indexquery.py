@@ -35,7 +35,7 @@ class IndexQuery():
     # Pretty-prints a graph walk of all suggested concepts and their verbs given a starting term prefix
 
     def search(self,querystring,handler="select"):
-        return self.engine.search(querystring)
+        return self.engine.search(querystring,handler=handler)
 
     ## -------------------------------------------
     # host:: the url of the search engine server
@@ -47,22 +47,23 @@ class IndexQuery():
         self.engine_name = config["engine_name"].lower()
         self.path = config["path"]
         
-        #Setup the search engine
-        if self.engine_name in ["solr"]:
-            self.engine_name = "solr"
-            self.engine = solr.Solr(self.host,self.name,self.kind,self.path)
-            
-        elif self.engine_name in ["elasticsearch","elastic","es"]:
-            self.engine_name = "elastic"
-            self.engine = elastic.Elastic(self.host,self.name,self.kind,self.path)
-        
-        else:
-            raise ValueError("Sorry! Only Solr or Elastic are currently supported")
-
         if enrich_query:
             self.enrich_query = enrich_query.enrich
         else:
             self.enrich_query = None
+
+        #Setup the search engine
+        if self.engine_name in ["solr"]:
+            self.engine_name = "solr"
+            self.engine = solr.Solr(self.host,self.name,self.kind,self.path,self.enrich_query)
+            
+        elif self.engine_name in ["elasticsearch","elastic","es"]:
+            self.engine_name = "elastic"
+            self.engine = elastic.Elastic(self.host,self.name,self.kind,self.path,self.enrich_query)
+        
+        else:
+            raise ValueError("Sorry! Only Solr or Elastic are currently supported")
+
 
 
 ##==========================================================

@@ -9,7 +9,7 @@ from skipchunk import skipchunk as sc
 
 if __name__ == "__main__":
 
-    LOAD = True
+    LOAD = False
 
     skipchunk_config_solr = {
         "host":"http://localhost:8983/solr/",
@@ -25,7 +25,8 @@ if __name__ == "__main__":
         "engine_name":"elasticsearch"
     }
 
-    skipchunk_config = skipchunk_config_elastic
+    #skipchunk_config = skipchunk_config_elastic
+    skipchunk_config = skipchunk_config_solr
 
     #source = "blog-posts.json"
     source = "blog-posts-one.json"

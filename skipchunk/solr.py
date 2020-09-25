@@ -190,17 +190,21 @@ class Solr(SearchEngineInterface):
 
     def search(self,querystring, handler: str) -> str:
         #Searches the engine for the query
+        enriched = None
         if self.enrich_query:
-            querystring = self.enrich_query(querystring)
+            enriched = self.enrich_query(querystring)
 
         params = []
         for t in querystring.items():
-            params.append(t[0]+'='+urllib.parse.quote(t[1]))
+            if t[0] == "q" and enriched:
+                params.append('q='+urllib.parse.quote(enriched))
+            else:
+                params.append(t[0]+'='+urllib.parse.quote(t[1]))
         qs = '&'.join(params)
 
         uri = self.solr_uri + '/' + handler + '?' + qs
         results,status = passthrough(uri)
-        return results,status
+        return json.loads(results),status
 
     ## -------------------------------------------
     ## Graphing
@@ -415,7 +419,7 @@ class Solr(SearchEngineInterface):
 
         return tree
 
-    def __init__(self,host,name,kind,path):
+    def __init__(self,host,name,kind,path,enrich_query=None):
         self.host = host
         self.name = name + '-' + kind
         self.kind = kind
@@ -427,6 +431,8 @@ class Solr(SearchEngineInterface):
         self.document_data = os.path.join(self.root, 'documents')
 
         self.select_handler = pysolr.Solr(self.solr_uri, search_handler='/select')
+
+        self.enrich_query = enrich_query
 
         if kind == "graph":
             self.suggest_handler = pysolr.Solr(self.solr_uri, search_handler='/suggest')

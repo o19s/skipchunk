@@ -13,8 +13,8 @@ class EnrichQuery():
 					terms.append(tok.lemma_ + tok.whitespace_)
 				else:
 					terms.append(tok.text_with_ws)
-			querystring["q"] = ''.join(terms)
-		return querystring
+			enriched = ''.join(terms)
+		return enriched
 
 	def __init__(self,model='en_core_web_lg'):
 		self.nlp = spacy.load(model)

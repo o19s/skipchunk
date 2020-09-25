@@ -16,6 +16,7 @@ requirements = [
     #'neuralcoref==4.0',
     'nltk>=3.5',
     'pysolr>=3.9.0',
+    'elasticsearch==7.9.1'
     'Click>=6.0',
     'tqdm>=4.48.2',
     'requests==2.23.0',
