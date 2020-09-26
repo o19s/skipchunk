@@ -18,8 +18,8 @@ requirements = [
     'pysolr==3.9.0',
     'elasticsearch==7.9.1',
     'Click>=6.0',
-    'tqdm==4.48.2',
-    'requests==2.23.0',
+    'tqdm>=4.48',
+    'requests>=2.23',
     'jsonpickle==1.4.1',
     'bs4==0.0.1',
     'lxml==4.5.2',
@@ -59,6 +59,6 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/o19s/skipchunk',
-    version='0.9.7',
+    version='0.9.8',
     zip_safe=False,
 )
