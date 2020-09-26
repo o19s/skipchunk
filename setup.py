@@ -22,7 +22,8 @@ requirements = [
     'requests==2.23.0',
     'jsonpickle==1.4.1',
     'bs4==0.0.1',
-    'lxml==4.5.2'
+    'lxml==4.5.2',
+    'multidict==4.7.6'
 ]
 
 setup_requirements = [ ]
@@ -58,6 +59,6 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/o19s/skipchunk',
-    version='0.9.6',
+    version='0.9.7',
     zip_safe=False,
 )
