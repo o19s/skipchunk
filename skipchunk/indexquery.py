@@ -25,6 +25,12 @@ class IndexQuery():
     def index(self,timeout=10000):
         return self.engine.index(indexableDocuments(self.engine.document_data),timeout=timeout)
 
+    def indexDocument(self,document,timeout=10000):
+        return self.engine.index([document],timeout=timeout)
+
+    def indexGenerator(self,generator,timeout=10000):
+        return self.engine.index(generator,timeout=timeout)
+
     def indexes(self):
         return self.engine.indexes()
 
