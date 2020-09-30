@@ -86,7 +86,7 @@ class Elastic(SearchEngineInterface):
             if r.status_code == 200:
                 #Say cheese
                 indexes = r.json()
-                indexes = [i["index"].replace('-' + self.kind,'') for i in indexes if '-'+self.kind in i["index"]]
+                indexes = [i["index"].replace(self.postfix,'') for i in indexes if self.postfix in i["index"]]
 
             else:
                 print('ELASTIC ERROR! Cores could not be listed! Have a nice day.')
@@ -499,11 +499,12 @@ class Elastic(SearchEngineInterface):
         # Pretty-prints a graph walk of all suggested concepts and their verbs given a starting term prefix
         return []
 
-    def __init__(self,host,name,kind,path,enrich_query=None):
+    def __init__(self,host,name,kind,path,postfix,enrich_query=None):
         self.host = host
-        self.name = name + '-' + kind
+        self.name = name + postfix
         self.kind = kind
         self.path = os.path.abspath(path)
+        self.postfix = postfix
 
         self.root = os.path.join(self.path, name)
         self.elastic_home = os.path.join(self.root, 'elastic_'+self.kind)

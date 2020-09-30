@@ -50,8 +50,10 @@ class IndexQuery():
         self.kind = "index"
         self.host = config["host"]
         self.name = config["name"]
-        self.engine_name = config["engine_name"].lower()
         self.path = config["path"]
+        self.postfix = ""
+
+        self.engine_name = config["engine_name"].lower()
         
         if enrich_query:
             self.enrich_query = enrich_query.enrich
@@ -61,11 +63,11 @@ class IndexQuery():
         #Setup the search engine
         if self.engine_name in ["solr"]:
             self.engine_name = "solr"
-            self.engine = solr.Solr(self.host,self.name,self.kind,self.path,self.enrich_query)
+            self.engine = solr.Solr(self.host,self.name,self.kind,self.path,self.postfix,enrich_query=self.enrich_query)
             
         elif self.engine_name in ["elasticsearch","elastic","es"]:
             self.engine_name = "elastic"
-            self.engine = elastic.Elastic(self.host,self.name,self.kind,self.path,self.enrich_query)
+            self.engine = elastic.Elastic(self.host,self.name,self.kind,self.path,self.postfix,enrich_query=self.enrich_query)
         
         else:
             raise ValueError("Sorry! Only Solr or Elastic are currently supported")

@@ -171,17 +171,18 @@ class GraphQuery():
         self.host = config["host"]
         self.name = config["name"]
         self.path = config["path"]
+        self.postfix = "-graph"
 
         self.engine_name = config["engine_name"].lower()
 
         #Setup the search engine
         if self.engine_name in ["solr"]:
             self.engine_name = "solr"
-            self.engine = solr.Solr(self.host,self.name,self.kind,self.path)
+            self.engine = solr.Solr(self.host,self.name,self.kind,self.path,self.postfix)
             
         elif self.engine_name in ["elasticsearch","elastic","es"]:
             self.engine_name = "elastic"
-            self.engine = elastic.Elastic(self.host,self.name,self.kind,self.path)
+            self.engine = elastic.Elastic(self.host,self.name,self.kind,self.path,self.postfix)
 
         
         else:

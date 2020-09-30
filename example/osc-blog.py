@@ -25,11 +25,11 @@ if __name__ == "__main__":
         "engine_name":"elasticsearch"
     }
 
-    #skipchunk_config = skipchunk_config_elastic
-    skipchunk_config = skipchunk_config_solr
+    skipchunk_config = skipchunk_config_elastic
+    #skipchunk_config = skipchunk_config_solr
 
-    #source = "blog-posts.json"
-    source = "blog-posts-one.json"
+    source = "blog-posts.json"
+    #source = "blog-posts-one.json"
 
     print(timestamp()," | Initializing")
 

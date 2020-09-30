@@ -100,7 +100,7 @@ class Solr(SearchEngineInterface):
             if r.status_code == 200:
                 #Say cheese
                 cores = list(r.json()['status'].keys())
-                cores = [c.replace('-' + self.kind,'') for c in cores if self.kind in c]
+                cores = [c.replace(self.postfix,'') for c in cores if self.postfix in c]
 
             else:
                 print('SOLR ERROR! Cores could not be listed! Have a nice day.')
@@ -419,11 +419,12 @@ class Solr(SearchEngineInterface):
 
         return tree
 
-    def __init__(self,host,name,kind,path,enrich_query=None):
+    def __init__(self,host,name,kind,path,postfix,enrich_query=None):
         self.host = host
-        self.name = name + '-' + kind
+        self.name = name + postfix
         self.kind = kind
         self.path = os.path.abspath(path)
+        self.postfix = postfix
         self.solr_uri = self.host + self.name
 
         self.root = os.path.join(self.path, name)
