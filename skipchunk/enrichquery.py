@@ -1,6 +1,6 @@
 import spacy
 
-from . import payloader
+_POS_ = {'ADJ','ADV','INTJ','NOUN','PROPN','VERB'}
 
 class EnrichQuery():
 
@@ -9,7 +9,7 @@ class EnrichQuery():
 			doc = self.nlp(querystring["q"])
 			terms = []
 			for tok in doc:
-				if (tok.is_alpha) and (len(tok.lemma_)>0) and (tok.pos_ in payloader._POS_SCORES_):
+				if (tok.is_alpha) and (len(tok.lemma_)>0) and (tok.pos_ in _POS_):
 					terms.append(tok.lemma_ + tok.whitespace_)
 				else:
 					terms.append(tok.text_with_ws)

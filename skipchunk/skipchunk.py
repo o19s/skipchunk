@@ -16,11 +16,7 @@ from tqdm import tqdm
 from nltk.corpus import wordnet as wn
 
 from . import html_strip
-from . import payloader
 
-#import neuralcoref
-
-#### TODO: make these tag sets configurable!
 _NNJJ_ = {'JJ','JJR','JJS','NN','NNP','NNS','ADJ','NOUN'} #Nouns and Adjectives
 _VBRB_ = {'RB','RBR','RBS','RP','VB','VBD','VBG','VBN','VBP','VBZ','ADV','VERB'} #Verbs and Adverbs
 _PUNC_ = {'.',',','?','!',';',':','(',')','[',']','{','}','"','\''} #Punctuation
@@ -231,7 +227,7 @@ def skipchunk(sentence,docid,sentenceid,maxslop=4,minlength=2,maxlength=4):
 
         if term:
 
-            if (term.tag in _NNJJ_):
+            if (term.tag in _NNJJ_ and token.is_alpha):
                 if ispredicate:
                     predicate = chunkToLabel(stack,origs,start,docid,sentenceid)
                     predicates.append(predicate)
@@ -253,7 +249,7 @@ def skipchunk(sentence,docid,sentenceid,maxslop=4,minlength=2,maxlength=4):
                     stack=[]
                     origs=[]                
 
-            elif (term.tag in _VBRB_) and (term.dep not in _EXCL_DEPS_):
+            elif (term.tag in _VBRB_) and (term.dep not in _EXCL_DEPS_) and (token.is_alpha):
                 if isconcept:
                     concept = chunkToLabel(stack,origs,start,docid,sentenceid)
                     concepts.append(concept)
@@ -435,7 +431,7 @@ class Skipchunk():
     # --------------------------------------------------
 
     def saveDocument(self,doc):
-        filename = self.document_data + '/' + doc[self.idfield] + '.json'
+        filename = self.document_data + '/' + str(doc[self.idfield]) + '.json'
         with open(filename,"w") as file:
             file.write(json.dumps(doc))
 
@@ -454,8 +450,6 @@ class Skipchunk():
         predicates = self.predicates
         
         enriched = []
-
-        payloadify = payloader.Payloader()
 
         for doc,context in self.nlp.pipe(tuples,as_tuples=True):
 
@@ -509,9 +503,6 @@ class Skipchunk():
                             if predicate.key not in docpredicates:
                                 docpredicates[predicate.key] = []
                             docpredicates[predicate.key].append(predicate)
-
-                    #PAYLOAD PIPELINE STAGE
-                    rich[payloadfield].append(payloadify.enrich(sentence))
 
                     sentenceid += 1
             
@@ -614,7 +605,6 @@ class Skipchunk():
         #Initialize NLP pipeline
         self.spacy_model=spacy_model
         self.nlp = spacy.load(self.spacy_model)
-        #neuralcoref.add_to_pipe(self.nlp)
 
         #These don't do anything yet but they will be used later to untangle the global constants
         self.concept_tags = concept_tags
@@ -654,29 +644,3 @@ class Skipchunk():
         self.document_data = os.path.join(self.root, 'documents')
         if not os.path.isdir(self.document_data):
             os.makedirs(self.document_data)
-
-
-        ### THE BIG PICTURE ######################################
-        """
-        CONTENT ANALYSIS PIPELINE
-         - tuplize (decide what fields to use and what contexts)
-         - html strip (strips html from fields into plain text)
-         - sentencize (splits plain text into sentences)
-         - enrich (extracts the latent language graph)
-         - entitize (flags entities)
-         - payload (assigns tokens a payload value)
-        """
-
-        """
-        QUERY ANALYSIS PIPELINE
-         - shingler (left-most longest shingles for concept identification)
-         - tagger (looks up shingles in the concept dictionary)
-         - rewriter (rewrites the query based on the tags)
-        """
-
-        """
-        COMMANDS
-         - analyze (executes the above pipeline)
-         - index (sends enriched documents to the search engine)
-         - save or load (saves to the local disk)
-        """
