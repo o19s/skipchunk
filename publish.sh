@@ -7,5 +7,6 @@
 # 6. Go and run this script!
 
 mv dist/* ./dist.old/
+python convert_md_2_rst.py
 python setup.py sdist bdist_wheel
 python -m twine upload --skip-existing dist/*
