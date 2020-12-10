@@ -53,8 +53,8 @@ if __name__ == "__main__":
         print(timestamp()," | Enriching")
         s.enrich(tuples)
 
-        # If you set LOAD=True, this will save a pickle file for later on if you want to enrich more content.
-        # WARNING! This can get very big.
+        # This will save a pickle file for later on.
+        # WARNING! The files can get very big.  Be careful out there!
         print(timestamp()," | Pickling")
         s.save()
 
