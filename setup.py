@@ -13,7 +13,6 @@ with open('HISTORY.rst') as history_file:
 
 requirements = [
     'spacy==2.3.2', 
-    #'neuralcoref==4.0',
     'nltk==3.5',
     'pysolr==3.9.0',
     'elasticsearch==7.9.1',
@@ -59,6 +58,6 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/o19s/skipchunk',
-    version='0.9.10',
+    version='1.0.0',
     zip_safe=False,
 )
