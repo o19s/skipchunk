@@ -5,7 +5,7 @@ History
 0.1.0 (2019-06-18)
 ------------------
 
-* Cookie-cutted
+* Cookie-cutted.
 
 0.9.0 (2020-09-25)
 ------------------
@@ -21,4 +21,8 @@ History
 ------------------
 
 * Beta Release.
-* Removal of unused alpha code.
+
+1.1.1 (2020-12-10)
+------------------
+
+* Basic Readme doc.
