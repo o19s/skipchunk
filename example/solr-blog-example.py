@@ -22,8 +22,8 @@ if __name__ == "__main__":
 
     skipchunk_config = skipchunk_config_solr
 
-    #source = "blog-posts.json"
-    source = "blog-posts-one.json"
+    source = "blog-posts.json"
+    #source = "blog-posts-one.json" #Single document for integration testing
 
     print(timestamp()," | Initializing")
 
