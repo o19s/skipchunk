@@ -29,8 +29,20 @@ The current Elasticsearch supported version is 7.6.2, but it might work on other
 
 ## Use It!
 
-See the ```./example/``` folder for an end-to-end OSC blog load and query
+See the ```./example/``` folder for an end-to-end OSC blog load:
 
+### Solr
+
+Start Solr first!  Doesn't work with Solr cloud yet, but we're working on it.
+You'll need to start solr using skipchunk's solr_home directory for now.
+
+Then run this: ```python solr-blog-example.py```
+
+### Elasticsearch
+
+Start Elasticsearch first!
+
+Then run this: ```python elasticsearch-blog-example.py```
 
 ## Features
 
@@ -72,7 +84,7 @@ The dict must contain the following entries
     }
 ```
 
-### Concept/Predicate Length
+### Skipchunk Initialization
 
 When initializing Skipchunk, you will need to provide the constructor with the following parameters
 
@@ -86,9 +98,32 @@ When initializing Skipchunk, you will need to provide the constructor with the f
 - cache_documents=False
 - cache_pickle=False
 
+### Skipchunk Methods
+
+- ```tuplize(filename=source,fields=['title','content',...])``` (Produces a list of (text,document) tuples ready for processing by the enrichment.)
+- ```enrich(tuples)``` (Enriching can take a long time if you provide lots of text.  Consider batching at 10k docs at a time.)
+- ```save``` (Saves to pickle)
+- ```load``` (Loads from pickle)
+
+### Graph API
+
+After enrichment, you can then index the graph into the engine
+
+- ```index(skipchunk:Skipchunk)``` (Updates the knowledge graph in the search engine)
+- ```delete``` (Deletes a knowledge graph - be careful!)
+
+After indexing, you can call these methods to get autocompleted concepts or walk the knowledge graph
+
+- ```conceptVerbConcepts(concept:str,verb:str,mincount=1,limit=100) -> list``` ( Accepts a verb to find the concepts appearing in the same context)
+- ```conceptsNearVerb(verb:str,mincount=1,limit=100) -> list``` ( Accepts a verb to find the concepts appearing in the same context)
+- ```verbsNearConcept(concept:str,mincount=1,limit=100) -> list``` ( Accepts a concept to find the verbs appearing in the same context)
+- ```suggestConcepts(prefix:str,build=False) -> list``` ( Suggests a list of concepts given a prefix)
+- ```suggestPredicates(prefix:str,build=False) -> list``` ( Suggests a list of predicates given a prefix)
+- ```summarize(mincount=1,limit=100) -> list``` ( Summarizes a core)
+- ```graph(subject:str,objects=5,branches=10) -> list``` ( Gets the subject-predicate-object neighborhood graph for a subject)
 
 ## Credits
 
-Developed by Max Irwin, OpenSourceConnections https://opensourceconnections.com
+Developed by Max Irwin, OpenSource Connections https://opensourceconnections.com
 
-All the blog posts contained in the example directory are copyright OpenSource Connections, and may not be redistributed without permission
+All the blog posts contained in the example directory are copyright OpenSource Connections, and may not be used nor redistributed without permission
