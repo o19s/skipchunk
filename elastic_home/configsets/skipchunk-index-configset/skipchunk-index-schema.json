@@ -29,6 +29,15 @@
           }
         }
       },
+      {
+        "berts": {
+          "match": "*_vector",
+          "mapping": {
+            "type": "dense_vector",
+            "dims": 768
+          }
+        }
+      },
       { "pint":    {"match":"*_i" , "mapping": {"type":"integer"  }}},
       { "plong":   {"match":"*_l" , "mapping": {"type":"long"     }}},
       { "bool":    {"match":"*_b" , "mapping": {"type":"boolean"  }}},

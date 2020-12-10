@@ -6,7 +6,7 @@
 
 [![Documentation Status](https://readthedocs.org/projects/skipchunk/badge/?version=latest)](https://skipchunk.readthedocs.io/en/latest/?badge=latest)
 
-Easy natural language concept search for the masses.
+Easy search autosuggest with NLP magic.
 
 Out of the box it provides a hassle-free autosuggest for any corpus from scratch, and latent knowledge graph extraction and exploration.
 

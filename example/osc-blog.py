@@ -56,11 +56,11 @@ if __name__ == "__main__":
         s.save()
 
     print(timestamp()," | Indexing Graph")
-    #gq.delete()
+    gq.delete()
     gq.index(s)
 
-    print(timestamp()," | Indexing Content")
+    #print(timestamp()," | Indexing Content")
     #iq.delete()
-    iq.index()
+    #iq.index()
     
     print(timestamp()," | !!!~~~~~DONE~~~~~!!!")

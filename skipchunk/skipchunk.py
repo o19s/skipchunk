@@ -16,6 +16,7 @@ from tqdm import tqdm
 from nltk.corpus import wordnet as wn
 
 from . import html_strip
+from . import database
 
 _NNJJ_ = {'JJ','JJR','JJS','NN','NNP','NNS','ADJ','NOUN'} #Nouns and Adjectives
 _VBRB_ = {'RB','RBR','RBS','RP','VB','VBD','VBG','VBN','VBP','VBZ','ADV','VERB'} #Verbs and Adverbs
@@ -431,6 +432,9 @@ class Skipchunk():
     # --------------------------------------------------
 
     def saveDocument(self,doc):
+        if not self.cache_documents:
+            return False
+
         filename = self.document_data + '/' + str(doc[self.idfield]) + '.json'
         with open(filename,"w") as file:
             file.write(json.dumps(doc))
@@ -516,6 +520,21 @@ class Skipchunk():
         conceptgroups = groupConcepts(concepts,minlabels=minlabels)
         predicategroups = groupConcepts(predicates,minlabels=minlabels)
 
+        #If the concept is new, add it to the preflabel database
+        #If the concept existed before this batch, get the existing preflabel
+        db = database.Database(self.database)
+        for idx in range(len(conceptgroups)):
+            preflabel = db.upsert_concept(conceptgroups[idx])
+            if preflabel != conceptgroups[idx].preflabel:
+                conceptgroups[idx].preflabel = preflabel
+                #print('Concept label override!',preflabel)
+        for idx in range(len(predicategroups)):
+            preflabel = db.upsert_concept(predicategroups[idx])
+            if preflabel != predicategroups[idx].preflabel:
+                predicategroups[idx].preflabel = preflabel
+                #print('Predicate label override!',preflabel)
+        db.close()
+
         self.enriched = enriched
         self.concepts = concepts
         self.predicates = predicates
@@ -527,6 +546,10 @@ class Skipchunk():
     # --------------------------------------------------
 
     def load(self,path=None):
+
+        if not self.cache_pickle:
+            print("Pickle load cancelled, you must explicitly set cache_pickle=True when initializing Skipchunk")
+            return False
 
         if not path:
             path = self.pickle_data
@@ -550,6 +573,10 @@ class Skipchunk():
     # --------------------------------------------------
 
     def save(self,path=None):
+
+        if not self.cache_pickle:
+            print("Pickling cancelled, you must explicitly set cache_pickle=True when initializing Skipchunk")
+            return False
 
         if not path:
             path = self.pickle_data
@@ -586,7 +613,9 @@ class Skipchunk():
             subjectof_dependencies = _SUBJ_DEPS_,
             objectof_dependencies = _OBJ_DEPS_,
             exclude_tags = _EXCL_,
-            exclude_dependencies = _EXCL_DEPS_
+            exclude_dependencies = _EXCL_DEPS_,
+            cache_documents = False,
+            cache_pickle = False
         ):
 
         #Config:
@@ -615,6 +644,20 @@ class Skipchunk():
         self.exclude_tags = exclude_tags
         self.exclude_dependencies = exclude_dependencies
 
+        #Enable at your own risk!  This will take up about 2-3x your raw content size on disk
+        self.cache_documents = cache_documents
+        if not self.cache_documents:
+            print('Enriched Documents WILL NOT be saved to disk! To enable this, call Skipchunk with cache_documents=True')
+        else:
+            print('Enriched Documents WILL be saved to disk! To disable this, call Skipchunk with cache_documents=False')
+
+        #Enable at your own risk!  High content volumes will make you slow or even crash
+        self.cache_pickle = cache_pickle
+        if not self.cache_pickle:
+            print('Skipchunk WILL NOT pickle! To enable this, call Skipchunk with cache_pickle=True')
+        else:
+            print('Skipchunk WILL pickle! To disable this, call Skipchunk with cache_pickle=False')
+
         #Stateful data that will change when Skipchunk.enrich is run:
         self.enriched = None
         self.concepts = dict()
@@ -640,6 +683,12 @@ class Skipchunk():
         self.pickle_data = os.path.join(self.root, 'pickle')
         if not os.path.isdir(self.pickle_data):
             os.makedirs(self.pickle_data)
+
+        self.sqlite_data = os.path.join(self.root, 'sqlite')
+        self.database = os.path.join(self.sqlite_data, 'skipchunk.db')
+        print(self.database)
+        if not os.path.isdir(self.sqlite_data):
+            os.makedirs(self.sqlite_data)
 
         self.document_data = os.path.join(self.root, 'documents')
         if not os.path.isdir(self.document_data):
