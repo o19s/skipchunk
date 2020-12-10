@@ -28,6 +28,9 @@ You also need to have Solr or Elasticsearch installed and running somewhere!  Th
 See the ```./example/``` folder for an end-to-end OSC blog load and query
 
 
+## Library API
+
+
 ## Features
 
 * Identifies all the noun phrases and verb phrases in a corpus

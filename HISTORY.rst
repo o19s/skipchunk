@@ -15,4 +15,10 @@ History
 1.0.0 (2020-12-10)
 ------------------
 
-* Stable for release
+* Stable API.
+
+1.1.0 (2020-12-10)
+------------------
+
+* Beta Release.
+* Removal of unused alpha code.

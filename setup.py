@@ -33,15 +33,13 @@ setup(
     author="Max Irwin",
     author_email='mirwin@opensourceconnections.com',
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8'
     ],
-    description="Easy natural language concept search for the masses.",
+    description="Instant Knowledge Graphs from text documents.",
     entry_points={
         'console_scripts': [
             'skipchunk=skipchunk.cli:main',
@@ -58,6 +56,6 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/o19s/skipchunk',
-    version='1.0.0',
+    version='1.1.0',
     zip_safe=False,
 )
