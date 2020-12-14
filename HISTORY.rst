@@ -26,7 +26,8 @@ History
 
 * Basic Readme doc.
 
-1.2.1 (2020-12-14)
+1.2.2 (2020-12-14)
 ------------------
 
 * Configset path fix.
+* Static assets moved.
