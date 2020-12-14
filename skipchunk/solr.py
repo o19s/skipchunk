@@ -79,12 +79,6 @@ def suggest(prefix,dictionary="conceptLabelSuggester",count=25,build=False):
 
     return s
 
-def configPath(target_dir):
-    module_dir = os.path.dirname(os.path.abspath('/Users/max/o19s/skipchunk/'))
-    source_dir = module_dir[0:module_dir.rfind('/')]
-    graph_source = os.path.join(source_dir,target_dir)
-    return graph_source
-
 ## -------------------------------------------
 ## MAIN CLASS ENTRY POINT
 ## 
@@ -151,8 +145,7 @@ class Solr(SearchEngineInterface):
             try:
                 if not os.path.isdir(self.solr_home):
                     #Create the directories to hold the Solr conf and data
-                    graph_source = configPath('solr_home/configsets/skipchunk-'+self.kind+'-configset')
-                    print(graph_source)
+                    graph_source = configPath('skipchunk/solr_home/configsets/skipchunk-'+self.kind+'-configset')
                     shutil.copytree(graph_source,self.solr_home)
 
             except:

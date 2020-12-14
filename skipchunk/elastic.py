@@ -132,7 +132,7 @@ class Elastic(SearchEngineInterface):
                     shutil.rmtree(self.elastic_home)
 
                 #Create the directories to hold the Elastic conf and data
-                graph_source = configPath('elastic_home/configsets/skipchunk-'+self.kind+'-configset')
+                graph_source = configPath('skipchunk/elastic_home/configsets/skipchunk-'+self.kind+'-configset')
                 shutil.copytree(graph_source,self.elastic_home)
                 cfg_json_path = self.elastic_home + '/skipchunk-'+self.kind+'-schema.json'
 
