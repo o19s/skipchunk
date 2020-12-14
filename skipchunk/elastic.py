@@ -10,6 +10,7 @@ import elasticsearch.helpers
 from elasticsearch import Elasticsearch
 
 from .interfaces import SearchEngineInterface
+from .utilities import configPath
 
 #from ltr.helpers.handle_resp import resp_msg
 def resp_msg(msg, resp, throw=True):
@@ -120,23 +121,31 @@ class Elastic(SearchEngineInterface):
         name = self.name
         path = self.root
 
-        if not self.indexExists(name):
-            try:
+        settings = None
 
+        if not self.indexExists(name):
+
+            configset_ok = False
+
+            try:
                 if os.path.isdir(self.elastic_home):
                     shutil.rmtree(self.elastic_home)
 
                 #Create the directories to hold the Elastic conf and data
-                module_dir = os.path.dirname(os.path.abspath(__file__))
-                pathlen = module_dir.rfind('/')+1
-                graph_source = module_dir[0:pathlen] + '/elastic_home/configsets/skipchunk-'+self.kind+'-configset'
+                graph_source = configPath('elastic_home/configsets/skipchunk-'+self.kind+'-configset')
                 shutil.copytree(graph_source,self.elastic_home)
-
                 cfg_json_path = self.elastic_home + '/skipchunk-'+self.kind+'-schema.json'
 
                 #Create the index in Elastic
                 with open(cfg_json_path) as src:
                     settings = json.load(src)
+
+            except:
+                message = 'DISK ERROR! Could not find the schema at ' + graph_source
+                raise ValueError(message)
+
+            if settings:
+                try:
                     res = self.es.indices.create(self.name, body=settings)
                     r = ElasticResp(res)
                     if r.status_code == 200:
@@ -147,9 +156,9 @@ class Elastic(SearchEngineInterface):
                         print('ELASTIC ERROR! Index',name,'could not be created! Have a nice day.')
                         print(json.dumps(r.json(),indent=2))
 
-            except:
-                message = 'NETWORK ERROR! Could not connect to Elasticsearch server on',host,' ... Have a nice day.'
-                raise ValueError(message)
+                except:
+                    message = 'NETWORK ERROR! Could not connect to Elasticsearch server on',host,' ... Have a nice day.'
+                    raise ValueError(message)
 
         return success
         

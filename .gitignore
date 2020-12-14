@@ -109,3 +109,4 @@ skipchunk_data
 
 #Other
 .DS_store
+.github/ISSUE_TEMPLATE.rst

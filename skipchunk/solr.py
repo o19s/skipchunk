@@ -8,6 +8,9 @@ import shutil
 import urllib
 
 from .interfaces import SearchEngineInterface
+from .utilities import configPath
+
+import datetime
 
 ## -------------------------------------------
 ## Java-Friendly datetime string format
@@ -76,6 +79,12 @@ def suggest(prefix,dictionary="conceptLabelSuggester",count=25,build=False):
 
     return s
 
+def configPath(target_dir):
+    module_dir = os.path.dirname(os.path.abspath('/Users/max/o19s/skipchunk/'))
+    source_dir = module_dir[0:module_dir.rfind('/')]
+    graph_source = os.path.join(source_dir,target_dir)
+    return graph_source
+
 ## -------------------------------------------
 ## MAIN CLASS ENTRY POINT
 ## 
@@ -137,16 +146,20 @@ class Solr(SearchEngineInterface):
         name = self.name
         path = self.root
 
-
         if not self.indexExists(name):
-            try:
 
+            try:
                 if not os.path.isdir(self.solr_home):
                     #Create the directories to hold the Solr conf and data
-                    module_dir = os.path.dirname(os.path.abspath(__file__))
-                    pathlen = module_dir.rfind('/')+1
-                    graph_source = module_dir[0:pathlen] + '/solr_home/configsets/skipchunk-'+self.kind+'-configset'
+                    graph_source = configPath('solr_home/configsets/skipchunk-'+self.kind+'-configset')
+                    print(graph_source)
                     shutil.copytree(graph_source,self.solr_home)
+
+            except:
+                message = 'DISK ERROR! Could not find the schema at ' + graph_source
+                raise ValueError(message)            
+
+            try:
 
                 #Create the core in solr
                 uri = host + 'admin/cores?action=CREATE&name='+name+'&instanceDir='+self.solr_home+'/conf&config=solrconfig.xml&dataDir='+self.solr_home+'/data'

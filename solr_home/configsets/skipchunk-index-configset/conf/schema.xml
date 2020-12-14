@@ -66,23 +66,31 @@ EEEEEEEEEEEEEEEEEEEEEN@@@@@@@@@@@@@@@@@@@@QPyoxxtt.....xttxnaf=T==JSIxxxxk%PE-->
    -->
    <field name="_root_" type="string" indexed="true" stored="false"/>
 
-   <!-- ===================== SKIPCHUNK-INDEX FIELDS ===================== 
+   <!-- ===================== HELLO-NLP-INDEX FIELDS ===================== 
 
-    This schema defines the convention driven index backing for Skipchunk enriched fields
+    This schema defines the convention driven index backing for Hello-NLP enriched fields
 
    -->
 
    <field name="id"         type="string"    indexed="true"  stored="true" required="true" multiValued="false" /> 
    
-   <!-- THESE ARE THE ONLY HARDCODED FIELDS -->
+   <!-- ========================================================================= -->
+   <!-- THESE ARE THE ONLY HARDCODED FIELDS - Everything else is a dynamic field. -->
    <field name="createtime"  type="pdate"    indexed="true"  stored="true" multiValued="false" />
    <field name="title"       type="text_en"  indexed="true"  stored="true" />
    <field name="content"     type="text_en"  indexed="true"  stored="true" multiValued="true"/>
+   <!-- ========================================================================= -->
 
    <!-- Payload-enriched content -->
    <dynamicField name="*_payloads" type="text_en_payloads"   indexed="true" stored="true" multiValued="true" />
 
    <!-- Dynamic convention-over-configuration fields -->
+   <dynamicField name="*_t"     type="text_en"  indexed="true"   stored="true"   />
+   <dynamicField name="*_txt"   type="text_en"  indexed="true"   stored="true" multiValued="true"/>
+   <dynamicField name="*_en"    type="text_en"  indexed="true"   stored="true" multiValued="true"/>
+
+
+   <!-- Dynamic primitive type fields -->
    <dynamicField name="*_i"     type="pint"     indexed="true"   stored="true"   />
    <dynamicField name="*_is"    type="pint"     indexed="true"   stored="true"  multiValued="true"/>
    <dynamicField name="*_s"     type="string"   indexed="true"   stored="true"   />
@@ -91,26 +99,18 @@ EEEEEEEEEEEEEEEEEEEEEN@@@@@@@@@@@@@@@@@@@@QPyoxxtt.....xttxnaf=T==JSIxxxxk%PE-->
    <dynamicField name="*_l"     type="plong"    indexed="true"   stored="true"   />
    <dynamicField name="*_l_ns"  type="plong"    indexed="true"   stored="false"  />
    <dynamicField name="*_ls"    type="plong"    indexed="true"   stored="true"  multiValued="true"/>
-   <dynamicField name="*_t"     type="text_en"  indexed="true"   stored="true"   />
-   <dynamicField name="*_txt"   type="text_en"  indexed="true"   stored="true" multiValued="true"/>
-   <dynamicField name="*_en"    type="text_en"  indexed="true"   stored="true" multiValued="true"/>
    <dynamicField name="*_b"     type="boolean"  indexed="true"   stored="true"   />
    <dynamicField name="*_bs"    type="boolean"  indexed="true"   stored="true"  multiValued="true"/>
    <dynamicField name="*_f"     type="pfloat"   indexed="true"   stored="true"   />
    <dynamicField name="*_fs"    type="pfloat"   indexed="true"   stored="true"  multiValued="true"/>
    <dynamicField name="*_d"     type="pdouble"  indexed="true"   stored="true"   />
    <dynamicField name="*_ds"    type="pdouble"  indexed="true"   stored="true"  multiValued="true"/>
-
    <dynamicField name="*_dt"    type="pdate"    indexed="true"  stored="true"/>
    <dynamicField name="*_dts"   type="pdate"    indexed="true"  stored="true" multiValued="true"/>
-   <dynamicField name="*_p"     type="location" indexed="true"  stored="true"/>
-   
    <dynamicField name="*_c"     type="currency" indexed="true"  stored="true"/>
-
-   <dynamicField name="random_*" type="random" />
-
-   <!-- Type used to index the lat and lon components for the "location" FieldType -->
+   <dynamicField name="*_p"     type="location" indexed="true"  stored="true"/>
    <dynamicField name="*_coordinate"  type="pdouble" indexed="true"  stored="false" />
+   <dynamicField name="random_*" type="random" />
 
 
 
@@ -270,7 +270,8 @@ EEEEEEEEEEEEEEEEEEEEEN@@@@@@@@@@@@@@@@@@@@QPyoxxtt.....xttxnaf=T==JSIxxxxk%PE-->
       </analyzer>
     </fieldType>
 
-    <!-- lowercases the entire field value, keeping it as a single token.  -->
+    <!-- Only lowercases the field value, keeping it as a single token.  
+         Useful for keywords, categories, and other multivalued string matches.-->
     <fieldType name="lowercase" class="solr.TextField" positionIncrementGap="100">
       <analyzer>
         <tokenizer class="solr.KeywordTokenizerFactory"/>

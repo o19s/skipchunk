@@ -77,7 +77,7 @@ EEEEEEEEEEEEEEEEEEEEEN@@@@@@@@@@@@@@@@@@@@QPyoxxtt.....xttxnaf=T==JSIxxxxk%PE-->
 
    -->
 
-   <!-- IMPORTANT ENRICHY NOTE: The recommended id is set to a concatenation of data for the following fields: 
+   <!-- IMPORTANT SKIPCHUNK NOTE: The recommended id is set to a concatenation of data for the following fields: 
      "{{key}}_{{sentenceid}}_{start}}"
     -->
    <field name="id"         type="string"   indexed="true"  stored="true" required="true" multiValued="false" /> 
@@ -102,13 +102,14 @@ EEEEEEEEEEEEEEEEEEEEEN@@@@@@@@@@@@@@@@@@@@QPyoxxtt.....xttxnaf=T==JSIxxxxk%PE-->
    <copyField source="prefcount"  dest="prefweight_d" />
    <copyField source="total"      dest="totalweight_d" />
 
-   <!--  provinence  -->
+   <!--  provenance  -->
    <field name="docid"      type="string"   indexed="false" stored="true" multiValued="false" docValues="true"/>
    <field name="sentenceid" type="string"   indexed="false" stored="true" multiValued="false" docValues="true"/>
    <field name="start"      type="pint"     indexed="false" stored="true" multiValued="false" docValues="true"/>
    <field name="end"        type="pint"     indexed="false" stored="true" multiValued="false" docValues="true"/>
    <field name="length"     type="pint"     indexed="false" stored="true" multiValued="false" docValues="true"/>
-
+   <field name="createtime" type="pdate"    indexed="true"  stored="true" multiValued="false" />
+   
    <!-- verb dependency for noun phrases -->
    <field name="objectof"   type="string"   indexed="true"  stored="true" multiValued="false" docValues="true"/>
    <field name="subjectof"  type="string"   indexed="true"  stored="true" multiValued="false" docValues="true"/>
@@ -118,7 +119,7 @@ EEEEEEEEEEEEEEEEEEEEEN@@@@@@@@@@@@@@@@@@@@QPyoxxtt.....xttxnaf=T==JSIxxxxk%PE-->
    <field name="contenttype"  type="string" indexed="true"  stored="true" multiValued="false" />
    
    <!-- Create time of the label -->
-   <field name="createtime"  type="pdate"  indexed="true"  stored="true" multiValued="false" />
+   
 
    <!-- Main body of document extracted by SolrCell.
         NOTE: This field is not indexed by default, since it is also copied to "text"
