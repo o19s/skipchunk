@@ -425,7 +425,7 @@ class Skipchunk():
         if len(fields)==0:
             raise ValueError('Specify at least one field to convert')
 
-        for post in data:
+        for post in documents:
             text = textFromFields(post,fields,strip_html=strip_html)
             yield (text,post)
 

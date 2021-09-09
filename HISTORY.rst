@@ -37,3 +37,8 @@ History
 
 * SpaCy upgraded to 3.1.2.
 * Batch multiprocess processing for better throughput
+
+2.0.1 (2021-09-09)
+------------------
+
+* Fixed bulk operator

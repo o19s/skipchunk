@@ -28,7 +28,7 @@ def test():
         maxpredicatelength=3,
         minlabels=1)
 
-    sc.enrich(pairs)
+    sc.enrich(sc.bulk(documents=[post],fields=["text"]))
     sc.save()
     sc.load()
 
