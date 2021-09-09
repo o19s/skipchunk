@@ -453,9 +453,12 @@ class Skipchunk():
         concepts = self.concepts
         predicates = self.predicates
         
+        batch_size = self.spacy_batch_size
+        n_process = self.spacy_processes
+
         enriched = []
 
-        for doc,context in self.nlp.pipe(tuples,as_tuples=True):
+        for doc,context in self.nlp.pipe(tuples, batch_size=batch_size, n_process=n_process, as_tuples=True):
 
             rich = context
             docid = context[idfield]
@@ -615,7 +618,9 @@ class Skipchunk():
             exclude_tags = _EXCL_,
             exclude_dependencies = _EXCL_DEPS_,
             cache_documents = False,
-            cache_pickle = False
+            cache_pickle = False,
+            spacy_batch_size = 40,
+            spacy_processes = 4
         ):
 
         #Config:
@@ -631,6 +636,9 @@ class Skipchunk():
         self.maxpredicatelength = maxpredicatelength
         self.minlabels = minlabels
         
+        self.spacy_batch_size = spacy_batch_size
+        self.spacy_processes = spacy_processes
+
         #Initialize NLP pipeline
         self.spacy_model=spacy_model
         self.nlp = spacy.load(self.spacy_model)

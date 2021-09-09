@@ -31,3 +31,9 @@ History
 
 * Configset path fix.
 * Static assets moved.
+
+2.0.0 (2021-09-09)
+------------------
+
+* SpaCy upgraded to 3.1.2.
+* Batch multiprocess processing for better throughput
