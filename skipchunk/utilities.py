@@ -13,6 +13,6 @@ def timestamp():
 
 def configPath(target_dir):
     module_dir = os.path.dirname(os.path.abspath(__file__))
-    source_dir = module_dir[0:module_dir.rfind('/')]
+    source_dir = os.path.join(os.path.dirname(module_dir), '')
     graph_source = os.path.join(source_dir,target_dir)
     return graph_source
